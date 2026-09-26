@@ -1,0 +1,56 @@
+<a class="skip-link" href="#main-content" (click)="focusMainContent()">Skip to main content</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a
+      class="brand"
+      routerLink="/catalog"
+      aria-label="BrokerHub catalog home"
+      (click)="closeMenu()"
+    >
+      <span class="brand-mark" aria-hidden="true">BH</span>
+      <span class="brand-copy">
+        <strong>{{ title }}</strong>
+        <span>Property discovery & operations</span>
+      </span>
+    </a>
+
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-controls="primary-nav"
+      aria-label="Toggle primary navigation"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="toggleMenu()"
+    >
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+
+    <nav id="primary-nav" aria-label="Primary navigation" [class.open]="menuOpen()">
+      <a routerLink="/catalog" routerLinkActive="active" (click)="closeMenu()">Catalog</a>
+      <a routerLink="/catalog/foundation-unit" routerLinkActive="active" (click)="closeMenu()"
+        >Unit route</a
+      >
+      <a
+        class="sign-in-link"
+        routerLink="/auth/login"
+        routerLinkActive="active"
+        (click)="closeMenu()"
+        >Sign in</a
+      >
+    </nav>
+  </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+  <router-outlet (activate)="focusRouteHeading()" />
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <p><strong>BrokerHub foundation</strong></p>
+    <p>Live property data, customer sessions and staff operations are not connected yet.</p>
+  </div>
+</footer>

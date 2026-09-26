@@ -1,0 +1,67 @@
+.ui-state {
+  --state-color: var(--color-primary);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--color-boundary-subtle);
+  border-inline-start: 0.35rem solid var(--state-color);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.ui-state--success {
+  --state-color: var(--color-success);
+}
+
+.ui-state--error,
+.ui-state--forbidden {
+  --state-color: var(--color-danger);
+}
+
+.ui-state--stale,
+.ui-state--conflict {
+  --state-color: var(--color-warning);
+}
+
+.ui-state--loading,
+.ui-state--empty {
+  --state-color: var(--color-muted);
+}
+
+.state-marker {
+  inline-size: 0.75rem;
+  block-size: 0.75rem;
+  margin-block-start: 0.35rem;
+  border: 0.2rem solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--state-color);
+  box-shadow: 0 0 0 2px var(--state-color);
+}
+
+.state-label,
+h2,
+.state-message {
+  margin: 0;
+}
+
+.state-label {
+  color: var(--state-color);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin-block-start: var(--space-1);
+  font-size: clamp(1.1rem, 3vw, 1.35rem);
+  line-height: 1.25;
+}
+
+.state-message {
+  margin-block-start: var(--space-2);
+  color: var(--color-muted);
+  line-height: 1.55;
+}

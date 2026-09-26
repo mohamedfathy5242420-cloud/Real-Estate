@@ -1,0 +1,13 @@
+<section
+  class="ui-state"
+  [class]="'ui-state ui-state--' + tone()"
+  [attr.role]="role()"
+  [attr.aria-live]="announcement() === 'off' ? null : announcement()"
+>
+  <span class="state-marker" aria-hidden="true"></span>
+  <div>
+    <p class="state-label">{{ tone() }}</p>
+    <h2>{{ title() }}</h2>
+    <p class="state-message">{{ message() }}</p>
+  </div>
+</section>

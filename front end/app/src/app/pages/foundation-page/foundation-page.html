@@ -1,0 +1,20 @@
+<app-page-heading [eyebrow]="eyebrow()" [title]="title()" [description]="description()" />
+
+<div class="foundation-grid">
+  <app-ui-state
+    tone="foundation"
+    title="Route foundation only"
+    message="No live API request, authorization decision or Business operation runs on this page."
+  />
+
+  <section class="boundary-card" aria-labelledby="boundary-title">
+    <p class="card-kicker">Current boundary</p>
+    <h2 id="boundary-title">Ready for a future feature step</h2>
+    <ul>
+      <li>Responsive shell and route focus are active.</li>
+      <li>Server-rendering policy follows the route group.</li>
+      <li>Feature data and actions wait for an agreed contract.</li>
+    </ul>
+    <a routerLink="/catalog">Return to catalog foundation <span aria-hidden="true">→</span></a>
+  </section>
+</div>
