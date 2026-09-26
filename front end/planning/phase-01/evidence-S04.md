@@ -1,0 +1,22 @@
+# Evidence — F01-S04
+
+Status: Done. Review: Codex self-review plus a separate read-only contract review. The user's 2026-09-24 instruction to execute the next recorded step authorizes closing S04 and performing the F01 phase review; Proposed/Open items remain unapproved.
+
+BusinessRefs: BR-01..BR-16. UseCaseRefs: UC-01..UC-10. ScreenRefs: SC-01..SC-10. AcceptanceRefs: FAC-01..FAC-10. `TRACEABILITY.json` stays `DesignOnly`: every implementation is `NotStarted` and every `testEvidence` array is empty.
+
+Deliverables: `docs/API_CONTRACT.md`, `docs/ARCHITECTURE.md`, FE-D008/FE-D009 in `docs/DECISIONS.md`, and `planning/phase-01/steps/S04.md`.
+
+| Criterion | Evidence and review observation | Result |
+| --- | --- | --- |
+| AC01 operations, payloads and permissions | API_CONTRACT has a row for UC-01..10 with BR/SC/FAC links, a candidate command-level request/result/actor table, and separate public/customer/staff projections. Operation IDs are not live HTTP routes. Independent review identified missing command payload/permission detail; the candidate table was added. | Passed as document coverage after correction; Backend agreement Not run. |
+| AC02 shared wire boundaries | API_CONTRACT candidate table covers version/method mapping, errors, UTC/timezone, decimal/currency, lists, idempotency/stale writes and auth/session. Exact shapes and status mappings stay open. | Passed as proposal; no schema or endpoint tested. |
+| AC03 Business behavior | Viewing expiry/conflict/reschedule and staff cancellation follow D023–D030; agreement/sale snapshot and Lead-to-customer/project relationship follow D015–D022. Booking request/confirmation/deposit/expiry and notification failure stay distinct. Q04..Q07 and Proposed booking policies are labeled. | Passed by manual comparison with local shared Business and FAC documents; no implementation proof. |
+| AC04 responsibility and F02 plan | ARCHITECTURE splits Backend enforcement from UI display and proposes layer/type Angular organization, hybrid SSR public + CSR nonindexed routes, candidate toolchain, testing and hosting prerequisites. Official source URLs are linked there. | Passed as plan; dependencies/hosting Not selected or installed. |
+| AC05 decisions and trace | FE-D008 records email+password user choice but canonical Q01 remains Open pending Backend update/sync. FE-D009 records public indexing requirement, not a Google inclusion guarantee. SC-11 UC/FAC gap remains. | Passed with explicit cross-project gap. |
+| AC06 verification | `powershell -NoProfile -ExecutionPolicy Bypass -File "D:/Practice/front end/scripts/validate.ps1"` | Exit 0: 37 required files, state/handoff/step consistent, 16 BR / 10 UC / 10 SC / 10 FAC linked, 7/7 Business snapshots match. Document structure only. |
+
+L1: document validator exit 0 as above. A read-only PowerShell cross-reference check over all ten `TRACEABILITY.json` entries found no missing BR/UC/SC/FAC IDs in API_CONTRACT after expanding the shorthand; all implementation entries are `NotStarted` and no `testEvidence` exists. Its first draft used an invalid `Sort-Object -join` expression; after correcting the command it exposed abbreviated IDs missing as literal references, which were expanded and rechecked successfully. L2: manual Business/FAC/status review and a separate read-only contract review; the reviewer initially found missing command payload/permission detail, D022 Lead relation and login row. These were corrected; its final spot review found no remaining AC01..AC05 blocker and independently ran `validate.ps1` with exit 0. L3: actual Backend contract/integration Not run — no agreed endpoint/schema. L4: Angular build, unit, browser, SSR and SEO checks Not run — no Angular application exists. No Backend file or Business source snapshot was edited in this step.
+
+Independent research consulted official Angular versions/compatibility, rendering, CLI/forms/http and Google Search Central for the proposed F02 plan. Sources are linked in ARCHITECTURE/API_CONTRACT. Version choices must be checked again at F02 scaffold time; a document proposal is not an installed dependency.
+
+Open gates: canonical Q01 decision sync; verification/recovery/session/CSRF; Q04/Q05/Q06/Q07 and Proposed manager/proxy rights; actual method/path/schema and error semantics; currency and timezone contract; SSR hosting and anonymous-safe catalog API; SC-11 UC/FAC/trace. These gates are assigned to the dependent F02–F08 implementation steps; they are not silently approved by closing the design step.

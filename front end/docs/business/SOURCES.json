@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "canonicalRootRelative": "..",
+  "comparison": "normalized LF and trailing whitespace",
+  "files": [
+    {
+      "source": "docs/business/BUSINESS_OVERVIEW.md",
+      "snapshot": "docs/business/shared/BUSINESS_OVERVIEW.md"
+    },
+    {
+      "source": "docs/business/ACTORS_AND_PERMISSIONS.md",
+      "snapshot": "docs/business/shared/ACTORS_AND_PERMISSIONS.md"
+    },
+    {
+      "source": "docs/business/BUSINESS_RULES.md",
+      "snapshot": "docs/business/shared/BUSINESS_RULES.md"
+    },
+    {
+      "source": "docs/business/USE_CASES.md",
+      "snapshot": "docs/business/shared/USE_CASES.md"
+    },
+    {
+      "source": "docs/business/STATE_TRANSITIONS.md",
+      "snapshot": "docs/business/shared/STATE_TRANSITIONS.md"
+    },
+    {
+      "source": "docs/business/ACCEPTANCE_SCENARIOS.md",
+      "snapshot": "docs/business/shared/ACCEPTANCE_SCENARIOS.md"
+    },
+    {
+      "source": "docs/MVP_SCOPE.md",
+      "snapshot": "docs/business/shared/MVP_SCOPE.md"
+    }
+  ]
+}

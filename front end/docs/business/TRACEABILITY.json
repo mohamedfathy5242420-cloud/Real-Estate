@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "status": "DesignOnly",
+  "entries": [
+    {
+      "useCase": "UC-01",
+      "rules": [
+        "BR-01",
+        "BR-02",
+        "BR-03",
+        "BR-14",
+        "BR-15"
+      ],
+      "screens": [
+        "SC-07"
+      ],
+      "acceptance": [
+        "FAC-01"
+      ],
+      "phases": [
+        "F07"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-02",
+      "rules": [
+        "BR-03",
+        "BR-04",
+        "BR-10"
+      ],
+      "screens": [
+        "SC-01",
+        "SC-02",
+        "SC-03"
+      ],
+      "acceptance": [
+        "FAC-02"
+      ],
+      "phases": [
+        "F03"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-03",
+      "rules": [
+        "BR-05",
+        "BR-06",
+        "BR-15"
+      ],
+      "screens": [
+        "SC-06"
+      ],
+      "acceptance": [
+        "FAC-03"
+      ],
+      "phases": [
+        "F06"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-04",
+      "rules": [
+        "BR-04",
+        "BR-07"
+      ],
+      "screens": [
+        "SC-04",
+        "SC-05"
+      ],
+      "acceptance": [
+        "FAC-04"
+      ],
+      "phases": [
+        "F04"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-05",
+      "rules": [
+        "BR-08",
+        "BR-15"
+      ],
+      "screens": [
+        "SC-04",
+        "SC-05"
+      ],
+      "acceptance": [
+        "FAC-05"
+      ],
+      "phases": [
+        "F04"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-06",
+      "rules": [
+        "BR-06",
+        "BR-09",
+        "BR-15"
+      ],
+      "screens": [
+        "SC-04",
+        "SC-05"
+      ],
+      "acceptance": [
+        "FAC-06"
+      ],
+      "phases": [
+        "F04"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-07",
+      "rules": [
+        "BR-04",
+        "BR-10",
+        "BR-11",
+        "BR-16"
+      ],
+      "screens": [
+        "SC-02",
+        "SC-08"
+      ],
+      "acceptance": [
+        "FAC-07"
+      ],
+      "phases": [
+        "F05"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-08",
+      "rules": [
+        "BR-11",
+        "BR-12",
+        "BR-13",
+        "BR-16"
+      ],
+      "screens": [
+        "SC-08"
+      ],
+      "acceptance": [
+        "FAC-08"
+      ],
+      "phases": [
+        "F05"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-09",
+      "rules": [
+        "BR-13",
+        "BR-14",
+        "BR-15"
+      ],
+      "screens": [
+        "SC-09"
+      ],
+      "acceptance": [
+        "FAC-09"
+      ],
+      "phases": [
+        "F07"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-10",
+      "rules": [
+        "BR-08",
+        "BR-15"
+      ],
+      "screens": [
+        "SC-10"
+      ],
+      "acceptance": [
+        "FAC-10"
+      ],
+      "phases": [
+        "F08"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    }
+  ]
+}
