@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 1,
+  "status": "DesignOnly",
+  "note": "Links are planning coverage, not proof of implemented behavior. Automated tests are deferred by D031 to a later teaching step; no empty testEvidence claim is implied.",
+  "businessFiles": [
+    "docs/business/README.md",
+    "docs/business/BUSINESS_OVERVIEW.md",
+    "docs/business/ACTORS_AND_PERMISSIONS.md",
+    "docs/business/BUSINESS_RULES.md",
+    "docs/business/USE_CASES.md",
+    "docs/business/STATE_TRANSITIONS.md",
+    "docs/business/CONCURRENCY_AND_IDEMPOTENCY.md",
+    "docs/business/DECISION_PACKAGE_P01_S03.md",
+    "docs/business/DOMAIN_MODEL.md",
+    "docs/business/ERD.md",
+    "docs/business/CONSTRAINTS.md",
+    "docs/business/P02_TECHNICAL_FOUNDATION.md",
+    "docs/business/ACCEPTANCE_SCENARIOS.md"
+  ],
+  "entries": [
+    {
+      "useCase": "UC-01",
+      "rules": [
+        "BR-01",
+        "BR-02",
+        "BR-03",
+        "BR-14",
+        "BR-15"
+      ],
+      "acceptance": [
+        "AC-01",
+        "AC-02"
+      ],
+      "phases": [
+        "P03"
+      ],
+      "openQuestions": [
+        "Q04"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-02",
+      "rules": [
+        "BR-03",
+        "BR-04",
+        "BR-10"
+      ],
+      "acceptance": [
+        "AC-03",
+        "AC-04"
+      ],
+      "phases": [
+        "P02",
+        "P03"
+      ],
+      "openQuestions": [],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-03",
+      "rules": [
+        "BR-05",
+        "BR-06",
+        "BR-15"
+      ],
+      "acceptance": [
+        "AC-05"
+      ],
+      "phases": [
+        "P04"
+      ],
+      "openQuestions": [
+        "Q07"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-04",
+      "rules": [
+        "BR-04",
+        "BR-07"
+      ],
+      "acceptance": [
+        "AC-06"
+      ],
+      "phases": [
+        "P05"
+      ],
+      "openQuestions": [],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-05",
+      "rules": [
+        "BR-08",
+        "BR-15"
+      ],
+      "acceptance": [
+        "AC-07",
+        "AC-08"
+      ],
+      "phases": [
+        "P05"
+      ],
+      "openQuestions": [],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-06",
+      "rules": [
+        "BR-06",
+        "BR-09",
+        "BR-15"
+      ],
+      "acceptance": [
+        "AC-09"
+      ],
+      "phases": [
+        "P05"
+      ],
+      "openQuestions": [],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-07",
+      "rules": [
+        "BR-04",
+        "BR-10",
+        "BR-11",
+        "BR-16"
+      ],
+      "acceptance": [
+        "AC-10",
+        "AC-11"
+      ],
+      "phases": [
+        "P06"
+      ],
+      "openQuestions": [
+        "Q04"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-08",
+      "rules": [
+        "BR-11",
+        "BR-12",
+        "BR-13",
+        "BR-16"
+      ],
+      "acceptance": [
+        "AC-12"
+      ],
+      "phases": [
+        "P06"
+      ],
+      "openQuestions": [
+        "Q06"
+      ],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-09",
+      "rules": [
+        "BR-13",
+        "BR-14",
+        "BR-15"
+      ],
+      "acceptance": [
+        "AC-13"
+      ],
+      "phases": [
+        "P07"
+      ],
+      "openQuestions": [],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    },
+    {
+      "useCase": "UC-10",
+      "rules": [
+        "BR-08",
+        "BR-15"
+      ],
+      "acceptance": [
+        "AC-14"
+      ],
+      "phases": [
+        "P08"
+      ],
+      "openQuestions": [],
+      "implementation": "NotStarted",
+      "testEvidence": []
+    }
+  ]
+}
