@@ -1,0 +1,4 @@
+# Use consistent line endings for Windows and Linux development.
+* text=auto eol=lf
+*.png binary
+*.ico binary

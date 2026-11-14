@@ -1,0 +1,446 @@
+<app-page-heading
+  eyebrow="System administration"
+  title="Catalog management"
+  description="Define developers, projects and units, then record developer facts and marketing agreements. Listing publication is separate from unit availability."
+/>
+@if (allowed()) {
+  <nav class="tabs" aria-label="Catalog sections">
+    @for (tab of kinds; track tab) {
+      <button
+        type="button"
+        [attr.aria-pressed]="kind() === tab"
+        [disabled]="busy()"
+        (click)="switchKind(tab)"
+      >
+        {{ titles[tab] }}
+      </button>
+    }
+  </nav>
+  <section [attr.aria-busy]="busy()">
+    @if (busy()) {
+      <p role="status">Contacting the server…</p>
+    }
+    @if (error()) {
+      <p class="message error" role="alert">{{ error() }}</p>
+    }
+    @if (fieldErrors().length) {
+      <ul aria-label="Rejected fields">
+        @for (label of fieldErrors(); track $index) {
+          <li>{{ label }}</li>
+        }
+      </ul>
+    }
+    @if (notice()) {
+      <p class="message success" role="status">{{ notice() }}</p>
+    }
+    <div class="toolbar">
+      <button type="button" [disabled]="busy()" (click)="newRecord()">Create new record</button
+      ><button type="button" [disabled]="busy()" (click)="reload()">Reload data</button
+      ><a routerLink="/workspace">Workspace</a>
+    </div>
+    <div class="admin-grid">
+      <aside class="panel">
+        <h2>{{ titles[kind()] }}</h2>
+        <label for="record-search">Search the displayed list</label
+        ><input
+          id="record-search"
+          type="search"
+          [value]="listSearch()"
+          (input)="listSearch.set($any($event.target).value)"
+        />
+        @if (kind() === 'developers' || kind() === 'projects') {
+          <label class="checkbox"
+            ><input
+              type="checkbox"
+              [checked]="showInactive()"
+              (change)="showInactive.set($any($event.target).checked)"
+            />Show inactive</label
+          >
+        }
+        <ul class="record-list">
+          @for (record of visibleRecords(); track record.id) {
+            <li>
+              <button
+                type="button"
+                [disabled]="busy()"
+                [attr.aria-current]="selected()?.id === record.id ? 'true' : null"
+                (click)="open(record)"
+              >
+                {{ labelOf(record)
+                }}<small>
+                  @if (record.kind === 'developers' || record.kind === 'projects') {
+                    {{ record.isActive ? 'Active' : 'Inactive' }}
+                  }
+                  @if (record.kind === 'agreements') {
+                    {{ record.status === 'Draft' ? 'Draft' : 'Active' }}
+                  }
+                </small>
+              </button>
+            </li>
+          } @empty {
+            <li>No records to display.</li>
+          }
+        </ul>
+        @if (kind() === 'agreements') {
+          <div class="toolbar">
+            <button type="button" [disabled]="busy() || skip() === 0" (click)="listPage(-50)">
+              Previous agreements</button
+            ><button
+              type="button"
+              [disabled]="busy() || records().length < 50"
+              (click)="listPage(50)"
+            >
+              Next agreements
+            </button>
+          </div>
+        }
+      </aside>
+      <div class="panel editor">
+        <h2>{{ selected() ? 'Edit ' + titleOf(selected()!) : 'Create ' + titles[kind()] }}</h2>
+        @if (selected(); as record) {
+          <p class="version">
+            Server version: <bdi>{{ record.version }}</bdi> · Last updated (UTC):
+            {{ record.updatedAtUtc ?? record.createdAtUtc | date: 'medium' : 'UTC' }}
+          </p>
+        }
+        @if (agreement()?.status === 'Active') {
+          <p class="message">
+            An active agreement is read-only; its historical rules are not rewritten.
+          </p>
+        }
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <app-catalog-fields
+            [form]="form"
+            [fields]="fields()"
+            [developers]="developers()"
+            [projects]="projects()"
+          />
+          @if (kind() === 'projects') {
+            <p class="hint">
+              Use the actual project timezone name, such as Africa/Cairo. The agreement effective
+              date is evaluated in project time.
+            </p>
+          }
+          @if (kind() === 'units') {
+            <p class="hint">
+              The list price does not automatically change developer confirmation. Enter amounts and
+              areas using Western digits, without thousands separators and with up to two decimal
+              places.
+            </p>
+          }
+          @if (kind() === 'agreements') {
+            <fieldset [disabled]="agreement()?.status === 'Active'">
+              <legend>Projects and commission rules</legend>
+              @if (form.controls['scopeType'].value === 'SelectedProjects') {
+                <p>Choose covered projects belonging to the same developer.</p>
+                @for (project of developerProjects(); track project.id) {
+                  <label class="checkbox"
+                    ><input
+                      type="checkbox"
+                      [checked]="selectedProjects().includes(project.id)"
+                      (change)="toggleProject(project.id, $any($event.target).checked)"
+                    />{{ labelOf(project) }}</label
+                  >
+                }
+              }
+              <p class="hint">
+                One default rule is required. A project rule overrides it; historical deal
+                commission is not recalculated on this screen.
+              </p>
+              @for (rule of rules.controls; track rule; let index = $index) {
+                <fieldset [formGroup]="rule" class="commission-rule">
+                  <legend>Commission rule {{ index + 1 }}</legend>
+                  <label [for]="'rule-project-' + index">Project or default rule</label
+                  ><select [id]="'rule-project-' + index" formControlName="projectId">
+                    <option value="">Default rule</option>
+                    @for (project of developerProjects(); track project.id) {
+                      <option [value]="project.id">{{ labelOf(project) }}</option>
+                    }
+                  </select>
+                  <label [for]="'rule-type-' + index">Commission type</label
+                  ><select [id]="'rule-type-' + index" formControlName="ruleType">
+                    <option value="Percentage">Percentage of final sale price</option>
+                    <option value="FixedAmount">Fixed amount</option>
+                  </select>
+                  <label [for]="'rule-value-' + index">{{
+                    rule.controls.ruleType.value === 'Percentage' ? 'Percentage' : 'Fixed amount'
+                  }}</label>
+                  @if (rule.controls.ruleType.value === 'Percentage') {
+                    <input
+                      [id]="'rule-value-' + index"
+                      formControlName="percentage"
+                      inputmode="decimal"
+                      dir="ltr"
+                    />
+                  } @else {
+                    <input
+                      [id]="'rule-value-' + index"
+                      formControlName="fixedAmount"
+                      inputmode="decimal"
+                      dir="ltr"
+                    />
+                  }
+                  <label [for]="'rule-currency-' + index">Commission currency</label
+                  ><input
+                    [id]="'rule-currency-' + index"
+                    formControlName="currency"
+                    maxlength="3"
+                    dir="ltr"
+                  />
+                  <button type="button" [disabled]="busy()" (click)="removeRule(index)">
+                    Remove this rule from draft
+                  </button>
+                </fieldset>
+              }
+              <button type="button" [disabled]="busy() || rules.length >= 101" (click)="addRule()">
+                Add commission rule
+              </button>
+            </fieldset>
+          }
+          @if (agreement()?.status !== 'Active') {
+            <button class="primary" type="submit" [disabled]="busy() || blocked()">
+              {{ selected() ? 'Save changes' : 'Create record' }}
+            </button>
+          }
+        </form>
+        @if (selected(); as record) {
+          @if (record.kind === 'developers' || record.kind === 'projects') {
+            <button
+              type="button"
+              [disabled]="busy() || blocked() || form.dirty"
+              (click)="changeStatus()"
+            >
+              {{ record.isActive ? 'Deactivate record' : 'Reactivate record' }}
+            </button>
+          }
+          @if (record.kind === 'agreements' && record.status === 'Draft') {
+            <p>
+              Activation checks overlap and scope eligibility on the server; saving a draft does not
+              activate it.
+            </p>
+            <button
+              type="button"
+              [disabled]="busy() || blocked() || form.dirty || rules.dirty"
+              (click)="changeStatus()"
+            >
+              Activate agreement
+            </button>
+          }
+        }
+      </div>
+    </div>
+    @if (unit(); as current) {
+      <section class="panel">
+        <h2>Publication and developer confirmation</h2>
+        <dl>
+          <dt>Publish listing</dt>
+          <dd>{{ current.publicationStatus === 'Published' ? 'Published' : 'Unpublished' }}</dd>
+          <dt>Recorded availability</dt>
+          <dd>
+            {{
+              current.availabilityStatus === 'Available'
+                ? 'Available'
+                : current.availabilityStatus === 'Unavailable'
+                  ? 'Unavailable'
+                  : current.availabilityStatus === 'Reserved'
+                    ? 'Reserved'
+                    : current.availabilityStatus === 'Sold'
+                      ? 'Sold'
+                      : 'Unconfirmed'
+            }}
+          </dd>
+          <dt>Confirmed price</dt>
+          <dd>
+            <bdi>{{ current.confirmedPrice ?? '—' }} {{ current.confirmedCurrency }}</bdi>
+          </dd>
+          <dt>Price matches listing</dt>
+          <dd>
+            {{ current.priceMatchesAdvertisement ? 'Matches' : 'Does not match or unconfirmed' }}
+          </dd>
+        </dl>
+        <label for="publication-reason">Publication or withdrawal reason (optional)</label
+        ><input id="publication-reason" [formControl]="reason" maxlength="500" />
+        <div class="toolbar">
+          <button
+            type="button"
+            [disabled]="busy() || blocked() || form.dirty || !reason.valid"
+            (click)="publish(true)"
+          >
+            Publish listing</button
+          ><button
+            type="button"
+            [disabled]="busy() || blocked() || form.dirty || !reason.valid"
+            (click)="publish(false)"
+          >
+            Unpublish listing
+          </button>
+        </div>
+        <p class="hint">
+          Publication does not establish a booking or developer availability. Record an actual
+          confirmation; do not infer availability from elapsed time.
+        </p>
+        <form [formGroup]="confirmation" (ngSubmit)="recordConfirmation()">
+          <h3>Record new external confirmation</h3>
+          <div class="fields-grid">
+            <label
+              >Confirmation time UTC — Example 2026-11-05T08:00:00Z<input
+                id="confirmation-time"
+                formControlName="confirmedAtUtc"
+                dir="ltr"
+                placeholder="YYYY-MM-DDTHH:mm:ssZ"
+            /></label>
+            <label
+              >Confirmation source<input
+                id="confirmation-source"
+                formControlName="source"
+                maxlength="200" /></label
+            ><label
+              >Confirmation reference<input
+                id="confirmation-reference"
+                formControlName="sourceReference"
+                maxlength="500"
+            /></label>
+            <label
+              >Confirmed price (optional)<input
+                id="confirmation-price"
+                formControlName="confirmedPrice"
+                inputmode="decimal"
+                dir="ltr" /></label
+            ><label
+              >Confirmed price currency<input
+                id="confirmation-currency"
+                formControlName="currency"
+                maxlength="3"
+                dir="ltr"
+            /></label>
+            <label
+              >Confirmed availability<select
+                id="confirmation-availability"
+                formControlName="availabilityStatus"
+              >
+                <option value="">Availability was not confirmed in this observation</option>
+                <option value="Available">Available</option>
+                <option value="Unavailable">Unavailable</option>
+              </select></label
+            >
+            <label
+              >Internal notes<textarea
+                id="confirmation-notes"
+                formControlName="notes"
+                maxlength="4000"
+              ></textarea>
+            </label>
+          </div>
+          <button type="submit" [disabled]="busy() || blocked() || form.dirty">
+            Record developer confirmation
+          </button>
+        </form>
+      </section>
+      <section class="panel">
+        <h2>Unit images</h2>
+        <p class="hint">
+          PNG Or JPEG up to 5 MB. Display order and description are separate from unit availability;
+          the primary image is a read-only server value.
+        </p>
+        <div class="image-grid">
+          @for (image of images(); track image.id) {
+            <article>
+              <img [src]="imageUrl(image)" [alt]="image.altText ?? 'Unit image'" />
+              <p>
+                {{ image.altText ?? 'No description' }} · Order {{ image.sortOrder }}
+                {{ image.isPrimary ? '· Primary image' : '' }}
+              </p>
+              <button type="button" [disabled]="busy()" (click)="editImage(image)">
+                Edit image description and order
+              </button>
+            </article>
+          } @empty {
+            <p>No images have been uploaded for this unit.</p>
+          }
+        </div>
+        <form [formGroup]="imageForm" (ngSubmit)="saveImage()">
+          <h3>{{ editingImage() ? 'Edit image details' : 'Upload new image' }}</h3>
+          @if (!editingImage()) {
+            <input
+              #filePicker
+              id="unit-image-file"
+              type="file"
+              accept="image/png,image/jpeg"
+              hidden
+              (change)="chooseFile($event)"
+            />
+            <button type="button" [disabled]="busy()" (click)="filePicker.click()">
+              Select image file
+            </button>
+            <p role="status">{{ fileName() || 'No file selected yet' }}</p>
+          }
+          <label
+            >Alternative text<input
+              id="image-alt"
+              formControlName="altText"
+              maxlength="500" /></label
+          ><label
+            >Display order<input
+              id="image-order"
+              formControlName="sortOrder"
+              inputmode="numeric"
+              dir="ltr"
+          /></label>
+          <div class="toolbar">
+            <button type="submit" [disabled]="busy() || blocked() || form.dirty">
+              {{ editingImage() ? 'Save image details' : 'Upload image' }}</button
+            ><button type="button" [disabled]="busy()" (click)="newImage()">
+              Choose new image
+            </button>
+          </div>
+        </form>
+      </section>
+      <section class="panel">
+        <h2>External confirmation history</h2>
+        @for (item of history(); track item.id) {
+          <article class="history-entry">
+            <h3>{{ item.source }}</h3>
+            <p>
+              Confirmation UTC: {{ item.confirmedAtUtc | date: 'medium' : 'UTC' }} · Recorded UTC:
+              {{ item.recordedAtUtc | date: 'medium' : 'UTC' }}
+            </p>
+            <p>
+              <bdi>{{ item.confirmedPrice ?? '—' }} {{ item.currency }}</bdi> ·
+              {{
+                item.availabilityStatus === 'Available'
+                  ? 'Available'
+                  : item.availabilityStatus === 'Unavailable'
+                    ? 'Unavailable'
+                    : 'No availability observation'
+              }}
+            </p>
+            <p>{{ item.sourceReference }}</p>
+            <p>{{ item.notes }}</p>
+          </article>
+        } @empty {
+          <p>There are no confirmations on this page.</p>
+        }
+        <div class="toolbar">
+          <button
+            type="button"
+            [disabled]="busy() || historySkip() === 0"
+            (click)="historyPage(-50)"
+          >
+            Newer confirmations</button
+          ><button
+            type="button"
+            [disabled]="busy() || history().length < 50"
+            (click)="historyPage(50)"
+          >
+            Older confirmations
+          </button>
+        </div>
+      </section>
+    }
+  </section>
+} @else {
+  <p role="alert">
+    Administration session or permission is no longer available. Previous data was cleared.
+  </p>
+  <a routerLink="/auth/login">Sign in</a>
+}

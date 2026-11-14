@@ -1,0 +1,18 @@
+<app-page-heading [eyebrow]="eyebrow()" [title]="title()" [description]="description()" />
+<div class="foundation-grid">
+  <app-ui-state
+    tone="foundation"
+    title="Page coming soon"
+    message="No live actions are available on this page yet."
+  />
+  <section class="boundary-card" aria-labelledby="boundary-title">
+    <p class="card-kicker">Current version</p>
+    <h2 id="boundary-title">We are preparing this service</h2>
+    <ul>
+      <li>You can navigate pages and browse the demo catalog.</li>
+      <li>Data and actions for this service will be added in later steps.</li>
+      <li>Demo data does not represent actual properties or bookings.</li>
+    </ul>
+    <a routerLink="/catalog">Back to property catalog <span aria-hidden="true">←</span></a>
+  </section>
+</div>

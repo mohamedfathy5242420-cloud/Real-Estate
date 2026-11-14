@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  max-inline-size: 48rem;
+  margin-inline: auto;
+  padding: 2rem 1rem;
+}
+.account-panel {
+  background: var(--surface, #fff);
+  border: 1px solid #d9ded8;
+  border-radius: 1.25rem;
+  padding: clamp(1rem, 4vw, 2rem);
+}
+form {
+  display: grid;
+  gap: 0.75rem;
+}
+input:not([type='checkbox']),
+select {
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 0.8rem;
+  border: 1px solid #748078;
+  border-radius: 0.5rem;
+  font: inherit;
+  box-sizing: border-box;
+}
+button {
+  min-block-size: 2.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #233831;
+  border-radius: 0.5rem;
+  background: #233831;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.secondary {
+  background: white;
+  color: #233831;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-block-size: 2.75rem;
+}
+.message {
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+.error {
+  color: #7a1c20;
+  background: #fff0ef;
+}
+.success {
+  color: #21422e;
+  background: #edf8ef;
+}
+.hint {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: #4c5853;
+}
+nav {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-block-start: 1.5rem;
+}
+a {
+  color: #233831;
+  text-underline-offset: 0.2em;
+}
+:is(a, button, input, select):focus-visible {
+  outline: 3px solid #947329;
+  outline-offset: 3px;
+}
+bdi {
+  overflow-wrap: anywhere;
+}

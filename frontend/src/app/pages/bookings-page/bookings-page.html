@@ -1,0 +1,371 @@
+<app-page-heading
+  eyebrow="Bookings"
+  [title]="staff ? 'Bookings and external records' : 'My bookings'"
+  description="Submitting does not confirm a unit booking. Deposits and refunds are external facts recorded under separate permissions."
+/>
+@if (allowed()) {
+  <section class="account-panel" [attr.aria-busy]="busy()">
+    @if (busy()) {
+      <p role="status">Contacting the server…</p>
+    }
+    @if (error()) {
+      <p role="alert" class="message error">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p role="status" class="message success">{{ message() }}</p>
+    }
+    <nav aria-label="Booking tools">
+      <button type="button" [disabled]="busy()" (click)="reload()">Reload bookings</button
+      ><a routerLink="/workspace">Workspace</a>
+      @if (!staff) {
+        <a routerLink="/my/profile">My profile and account links</a
+        ><a routerLink="/catalog">Catalog</a
+        ><button
+          type="button"
+          [disabled]="busy() || blocked() || !!pending()"
+          (click)="choose('submit')"
+        >
+          New booking request
+        </button>
+      }
+    </nav>
+    @if (pending()) {
+      <aside aria-label="Unresolved booking operation">
+        <p>
+          The original operation is stored on this page. Leaving loses the recovery copy; review
+          state and history before any new submission.
+        </p>
+        <button type="button" [disabled]="busy()" (click)="recover()">
+          Confirm the same saved booking operation
+        </button>
+      </aside>
+    }
+    @if (staff) {
+      <label for="booking-status">Booking status</label
+      ><select
+        id="booking-status"
+        [formControl]="status"
+        [attr.disabled]="busy() || pending() ? '' : null"
+        (change)="changeFilter()"
+      >
+        <option value="">All statuses</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ label(s) }}</option>
+        }
+      </select>
+    }
+    <h2>Booking requests</h2>
+    <ul>
+      @for (item of list()?.items ?? []; track item.id) {
+        <li>
+          <button type="button" [disabled]="busy() || !!pending()" (click)="open(item)">
+            {{ label(item.status) }} · {{ date(item.requestedAtUtc, rowZone(item)) }} ·
+            <bdi>{{ item.id }}</bdi>
+          </button>
+        </li>
+      } @empty {
+        <li>No bookings are available on this page.</li>
+      }
+    </ul>
+    <app-crm-pager
+      label="Booking pages"
+      [busy]="busy() || !!pending()"
+      [page]="page()"
+      [total]="list()?.total ?? 0"
+      (change)="changePage($event)"
+    />
+    @if (current(); as item) {
+      <section aria-label="Booking details">
+        <h2>{{ label(item.status) }}</h2>
+        <p>
+          Booking reference: <bdi>{{ item.id }}</bdi> · Version <bdi>{{ item.version }}</bdi>
+        </p>
+        <p>
+          Unit: <a [routerLink]="['/catalog', item.unitId]">{{ item.unitId }}</a>
+        </p>
+        <p>
+          Display timezone: <bdi>{{ zone() }}</bdi>
+        </p>
+        @if (item.confirmedPrice !== null && item.confirmedCurrencyCode) {
+          <p>
+            Saved booking price:
+            {{ item.confirmedPrice | displayCurrency: item.confirmedCurrencyCode }} ·
+            <bdi>{{ item.confirmedCurrencyCode }}</bdi>
+          </p>
+        }
+        <app-booking-fields [fields]="detailFields()" [zone]="zone()" />
+        <details>
+          <summary>Original times UTC</summary>
+          <p>
+            Submitted: <bdi>{{ item.requestedAtUtc }}</bdi>
+          </p>
+          <p>
+            Response deadline: <bdi>{{ item.responseDueAtUtc }}</bdi>
+          </p>
+          <p>
+            Booking deadline: <bdi>{{ item.reservationExpiresAtUtc ?? 'Unconfirmed' }}</bdi>
+          </p>
+        </details>
+        @if (staff) {
+          <details>
+            <summary>Internal booking references</summary>
+            <app-booking-fields [fields]="privateFields()" [zone]="zone()" />
+          </details>
+        }
+        <p>
+          Cancellation does not record a refund or automatically change unit availability. These
+          amounts are recorded facts, not a calculation of legal entitlement or a money transfer.
+        </p>
+        <div class="actions">
+          @for (a of actions(); track a) {
+            <button
+              type="button"
+              [disabled]="busy() || blocked() || !!pending()"
+              (click)="choose(a)"
+            >
+              {{ actionName(a) }}
+            </button>
+          }
+        </div>
+        <h3>Booking state history</h3>
+        @for (event of history()?.items ?? []; track event.id) {
+          <article>
+            <p>
+              {{ label(event.kind) }} · {{ date(event.atUtc) }} · Version
+              <bdi>{{ event.bookingVersion }}</bdi>
+            </p>
+            @if (event.reasonCode) {
+              <p>{{ label(event.reasonCode) }}</p>
+            }
+            @if (event.cancellationReason) {
+              <p>Cancellation reason: {{ event.cancellationReason }}</p>
+            }
+            @if (event.confirmedPrice !== null && event.confirmedCurrencyCode) {
+              <p>{{ event.confirmedPrice | displayCurrency: event.confirmedCurrencyCode }}</p>
+            }
+            @if (staff && actor(event); as actorId) {
+              <p>
+                Actor: <bdi>{{ actorId }}</bdi>
+              </p>
+            }
+            @if (event.reservationExpiresAtUtc) {
+              <p>Saved deadline: {{ date(event.reservationExpiresAtUtc) }}</p>
+            }
+          </article>
+        } @empty {
+          <p>There is no state history on this page.</p>
+        }
+        <app-crm-pager
+          label="Booking history pages"
+          [busy]="busy() || !!pending()"
+          [page]="pages().history"
+          [total]="history()?.total ?? 0"
+          (change)="sectionPage('history', $event)"
+        />
+        @if (staff) {
+          <details>
+            <summary>Developer responses and recorded decisions</summary>
+            <p>
+              A late response may be saved without changing the final state. Review the decision and
+              booking state; recording a fact alone does not mean confirmation.
+            </p>
+            @for (fact of responses()?.items ?? []; track fact.id) {
+              <article>
+                <h4>{{ label(fact.decision) }}</h4>
+                <p>
+                  Response reference: <bdi>{{ fact.id }}</bdi>
+                </p>
+                <app-booking-fields [fields]="factFields(fact)" [zone]="zone()" />
+              </article>
+            } @empty {
+              <p>There are no responses on this page.</p>
+            }
+            <app-crm-pager
+              label="Developer response pages"
+              [busy]="busy() || !!pending()"
+              [page]="pages().responses"
+              [total]="responses()?.total ?? 0"
+              (change)="sectionPage('responses', $event)"
+            />
+          </details>
+          <details>
+            <summary>External extension history</summary>
+            @for (fact of extensions()?.items ?? []; track fact.id) {
+              <article>
+                <p>
+                  Extension reference: <bdi>{{ fact.id }}</bdi>
+                </p>
+                <app-booking-fields [fields]="factFields(fact)" [zone]="zone()" />
+              </article>
+            } @empty {
+              <p>There are no extensions on this page.</p>
+            }
+            <app-crm-pager
+              label="Extension pages"
+              [busy]="busy() || !!pending()"
+              [page]="pages().extensions"
+              [total]="extensions()?.total ?? 0"
+              (change)="sectionPage('extensions', $event)"
+            />
+          </details>
+        }
+        <h3>Deposits paid outside the system</h3>
+        @for (fact of deposits()?.items ?? []; track fact.id) {
+          <article>
+            <p>
+              {{ fact.amount | displayCurrency: fact.currencyCode }} ·
+              <bdi>{{ fact.currencyCode }}</bdi> · {{ date(fact.paidAtUtc) }}
+            </p>
+            <p>
+              {{ label(fact.recordedRefundStatus) }} · Refunded:
+              {{ fact.recordedRefundAmount | displayNumber }} · Principal with no recorded refund:
+              {{ fact.recordedUnrefundedAmount | displayNumber }}
+            </p>
+            <button type="button" [disabled]="busy() || !!pending()" (click)="openDeposit(fact)">
+              Deposit and refund details
+            </button>
+          </article>
+        } @empty {
+          <p>There are no deposits recorded on this page.</p>
+        }
+        <app-crm-pager
+          label="Deposit pages"
+          [busy]="busy() || !!pending()"
+          [page]="pages().deposits"
+          [total]="deposits()?.total ?? 0"
+          (change)="sectionPage('deposits', $event)"
+        />
+        @if (deposit(); as selected) {
+          <section aria-label="Selected deposit and refunds">
+            <h3>Selected deposit</h3>
+            <p>
+              <bdi>{{ selected.id }}</bdi> ·
+              {{ selected.amount | displayCurrency: selected.currencyCode }} ·
+              <bdi>{{ selected.currencyCode }}</bdi>
+            </p>
+            <p>
+              {{ label(selected.recordedRefundStatus) }} · Recorded refund
+              {{ selected.recordedRefundAmount | displayNumber }} · Principal with no recorded
+              refund
+              {{ selected.recordedUnrefundedAmount | displayNumber }}
+            </p>
+            <app-booking-fields [fields]="financialFields(selected)" [zone]="zone()" />
+            @if (staff) {
+              <button
+                type="button"
+                [disabled]="busy() || blocked() || !!pending()"
+                (click)="choose('refunds')"
+              >
+                Record external deposit refund
+              </button>
+            }
+            <h4>Recorded actual refunds</h4>
+            @for (fact of refunds()?.items ?? []; track fact.id) {
+              <article>
+                <p>
+                  {{ fact.amount | displayCurrency: fact.currencyCode }} ·
+                  <bdi>{{ fact.currencyCode }}</bdi>
+                </p>
+                <app-booking-fields [fields]="financialFields(fact)" [zone]="zone()" />
+              </article>
+            } @empty {
+              <p>There are no refunds for this deposit on this page.</p>
+            }
+            <app-crm-pager
+              label="Deposit refund pages"
+              [busy]="busy() || !!pending()"
+              [page]="pages().refunds"
+              [total]="refunds()?.total ?? 0"
+              (change)="sectionPage('refunds', $event)"
+            />
+          </section>
+        }
+      </section>
+    }
+    @if (action(); as a) {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <h2>{{ actionName(a) }}</h2>
+        <p>
+          Enter times in your device timezone <bdi>{{ deviceZone }}</bdi
+          >; stored as UTC. Amounts are exact decimal values without grouping separators.
+        </p>
+        @if (a === 'submit') {
+          <p>
+            No previous viewing is required. The request awaits developer review within 72 actual
+            hours and does not establish a booking. A customer profile linked to your account is
+            required.
+          </p>
+        }
+        @if (a === 'cancel') {
+          <p>
+            Internal cancellation is immediate when accepted before the deadline, without waiting
+            for developer approval. No deposit is refunded automatically.
+          </p>
+        }
+        @if (a === 'responses') {
+          <label for="booking-response-kind">Actual developer response type</label
+          ><select
+            id="booking-response-kind"
+            [formControl]="responseKind"
+            (change)="choose('responses')"
+          >
+            <option value="Confirmed">Developer confirmed price and deadline</option>
+            <option value="Rejected">Developer rejected</option>
+          </select>
+          <p>
+            Record the actual developer response even if late; the saved decision shows whether the
+            state changed. Do not record a confirmation that did not occur externally.
+          </p>
+        }
+        @if (a === 'extensions') {
+          <p>
+            Record an external extension that actually occurred before booking expiry. The original
+            price remains saved.
+          </p>
+        }
+        @if (a === 'deposits') {
+          <p>
+            Record the amount paid to the developer outside the system. Recording does not execute a
+            payment, change booking state or calculate commission.
+          </p>
+        }
+        @if (a === 'refunds') {
+          <p>
+            Record only the amount actually refunded. The original currency is retained:
+            <bdi>{{ deposit()?.currencyCode }}</bdi
+            >. The system does not determine the contractually required refund.
+          </p>
+        }
+        @for (field of fields(); track field.key) {
+          <label [for]="'booking-' + field.key">{{ field.label }}</label>
+          @if (['notes', 'reason', 'requestReason'].includes(field.key)) {
+            <textarea
+              [id]="'booking-' + field.key"
+              [formControlName]="field.key"
+              [maxlength]="field.max ?? 1000"
+              [required]="!field.optional"
+              rows="4"
+            ></textarea>
+          } @else {
+            <input
+              [id]="'booking-' + field.key"
+              [formControlName]="field.key"
+              [type]="field.type ?? 'text'"
+              [maxlength]="field.max ?? 500"
+              [required]="!field.optional"
+              [attr.step]="field.type === 'datetime-local' ? 0.001 : null"
+            />
+          }
+        }
+        <button type="submit" [disabled]="busy() || blocked() || !!pending()">
+          Save booking action
+        </button>
+      </form>
+    }
+  </section>
+} @else {
+  <p role="alert">
+    Booking session or permission is no longer available. Previous data was cleared.
+  </p>
+  <a routerLink="/auth/login">Sign in</a>
+}

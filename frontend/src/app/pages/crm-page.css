@@ -1,0 +1,67 @@
+:host {
+  max-inline-size: 64rem;
+}
+section,
+article,
+form {
+  min-inline-size: 0;
+}
+article {
+  padding: 1rem;
+  border-block-end: 1px solid #d9ded8;
+}
+p,
+li,
+dd {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+textarea {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: 6rem;
+  padding: 0.8rem;
+  border: 1px solid #748078;
+  border-radius: 0.5rem;
+  font: inherit;
+}
+fieldset {
+  min-inline-size: 0;
+  margin-block: 1.25rem;
+  border: 1px solid #c6cec8;
+  padding: 1rem;
+}
+legend {
+  font-weight: 700;
+}
+dl {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) minmax(0, 2fr);
+  gap: 0.7rem;
+}
+dd {
+  margin: 0;
+}
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+ul {
+  padding-inline-start: 1.25rem;
+}
+:is(textarea, button):focus-visible {
+  outline: 3px solid #947329;
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  dl {
+    display: block;
+  }
+  dt {
+    font-weight: 700;
+  }
+  dd {
+    margin-block-end: 0.75rem;
+  }
+}

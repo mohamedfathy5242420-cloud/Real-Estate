@@ -1,0 +1,314 @@
+<app-page-heading
+  eyebrow="Viewings"
+  [title]="staff ? 'Viewing coordination and follow-up' : 'My viewings'"
+  description="Submitting does not confirm the time. External coordination and customer acceptance of an alternative are separate steps."
+/>
+@if (allowed()) {
+  <section class="account-panel" [attr.aria-busy]="busy()">
+    @if (busy()) {
+      <p role="status">Contacting the server…</p>
+    }
+    @if (error()) {
+      <p role="alert" class="message error">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p role="status" class="message success">{{ message() }}</p>
+    }
+    <nav aria-label="Viewing tools">
+      <button type="button" [disabled]="busy()" (click)="reload()">Reload viewings</button
+      ><a routerLink="/workspace">Workspace</a>
+      @if (!staff) {
+        <a routerLink="/my/profile">My profile and account links</a
+        ><a routerLink="/catalog">Catalog</a
+        ><button
+          type="button"
+          [disabled]="busy() || blocked() || !!pending()"
+          (click)="choose('submit')"
+        >
+          New viewing request
+        </button>
+      }
+    </nav>
+    @if (pending()) {
+      <aside aria-label="Unresolved viewing operation">
+        <p>
+          The original operation is stored on this page. Leaving loses the recovery copy; review the
+          history before any new submission.
+        </p>
+        <button type="button" [disabled]="busy()" (click)="recover()">
+          Confirm the same saved viewing operation
+        </button>
+      </aside>
+    }
+    @if (staff) {
+      <label for="viewing-status">Filter by status</label
+      ><select
+        id="viewing-status"
+        [formControl]="status"
+        [disabled]="busy() || !!pending()"
+        (change)="changeFilter()"
+      >
+        <option value="">All statuses</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ label(s) }}</option>
+        }
+      </select>
+    }
+    <h2>Viewing requests</h2>
+    <ul>
+      @for (item of list()?.items ?? []; track item.id) {
+        <li>
+          <button type="button" [disabled]="busy() || !!pending()" (click)="open(item)">
+            {{ label(item.status) }} · {{ date(item.currentProposedStartUtc, item.timeZoneId) }} ·
+            <bdi>{{ item.id }}</bdi>
+          </button>
+        </li>
+      } @empty {
+        <li>No viewings are available on this page.</li>
+      }
+    </ul>
+    <app-crm-pager
+      label="Viewing pages"
+      [busy]="busy() || !!pending()"
+      [page]="page()"
+      [total]="list()?.total ?? 0"
+      (change)="changePage($event)"
+    />
+    @if (current(); as item) {
+      <section aria-label="Viewing details">
+        <h2>{{ label(item.status) }}</h2>
+        <dl>
+          <dt>Viewing reference</dt>
+          <dd>
+            <bdi>{{ item.id }}</bdi>
+          </dd>
+          <dt>Unit reference</dt>
+          <dd>
+            <a [routerLink]="['/catalog', item.unitId]">{{ item.unitId }}</a>
+          </dd>
+          <dt>Project time</dt>
+          <dd>
+            <bdi>{{ item.timeZoneId }}</bdi>
+          </dd>
+          <dt>Proposed start</dt>
+          <dd>{{ date(item.currentProposedStartUtc) }}</dd>
+          <dt>Proposed end</dt>
+          <dd>{{ date(item.currentProposedEndUtc) }}</dd>
+          <dt>Confirmed start</dt>
+          <dd>{{ date(item.confirmedStartUtc) }}</dd>
+          <dt>Confirmed end</dt>
+          <dd>{{ date(item.confirmedEndUtc) }}</dd>
+          <dt>Request submission time</dt>
+          <dd>{{ date(item.requestedAtUtc) }}</dd>
+          <dt>Viewing version</dt>
+          <dd>
+            <bdi>{{ item.version }}</bdi>
+          </dd>
+        </dl>
+        @if (
+          item.status === 'PendingConfirmation' || item.status === 'AwaitingCustomerAcceptance'
+        ) {
+          <p>
+            Recorded waiting deadline: {{ date(item.pendingExpiresAtUtc) }}. The server determines
+            whether an action is valid when saving.
+          </p>
+        }
+        <details>
+          <summary>Original times UTC</summary>
+          <p>
+            Proposed: <bdi>{{ item.currentProposedStartUtc }}</bdi> —
+            <bdi>{{ item.currentProposedEndUtc }}</bdi>
+          </p>
+          <p>
+            Confirmed: <bdi>{{ item.confirmedStartUtc ?? 'Unconfirmed' }}</bdi> —
+            <bdi>{{ item.confirmedEndUtc ?? 'Unconfirmed' }}</bdi>
+          </p>
+        </details>
+        @if (staffRecord(); as privateItem) {
+          <h3>Internal coordination details</h3>
+          <dl>
+            <dt>Customer reference</dt>
+            <dd>
+              <bdi>{{ privateItem.customerId }}</bdi>
+            </dd>
+            <dt>Original lead</dt>
+            <dd>
+              <bdi>{{ privateItem.leadId }}</bdi>
+            </dd>
+            <dt>Employee at confirmation</dt>
+            <dd>
+              <bdi>{{ privateItem.confirmedEmployeeId ?? 'Unconfirmed' }}</bdi>
+            </dd>
+            <dt>Coordination source</dt>
+            <dd>{{ privateItem.coordinationSource ?? 'Not recorded' }}</dd>
+            <dt>Coordination reference</dt>
+            <dd>{{ privateItem.coordinationReference ?? 'Not recorded' }}</dd>
+            <dt>Coordination time</dt>
+            <dd>{{ date(privateItem.coordinatedAtUtc) }}</dd>
+            <dt>Cancellation reason</dt>
+            <dd>{{ privateItem.cancellationReason ?? 'None' }}</dd>
+            <dt>Outcome time</dt>
+            <dd>{{ date(privateItem.outcomeOccurredAtUtc) }}</dd>
+          </dl>
+          @if (privateItem.outcomeNoteId) {
+            <p>
+              Outcome notes are stored in customer follow-up under current-assignee permissions.
+              Note reference:
+              <bdi>{{ privateItem.outcomeNoteId }}</bdi>
+            </p>
+            <a
+              [routerLink]="
+                session.account()?.roles?.includes('SalesManager')
+                  ? '/admin/clients'
+                  : '/employee/clients'
+              "
+              >Open customer follow-up and notes</a
+            >
+          }
+        }
+      </section>
+      <div class="actions">
+        @for (a of actions(); track a) {
+          <button type="button" [disabled]="busy() || blocked() || !!pending()" (click)="choose(a)">
+            {{ actionName(a) }}
+          </button>
+        }
+      </div>
+      <h3>Viewing history</h3>
+      @for (event of history()?.items ?? []; track event.id) {
+        <article>
+          <p>
+            {{ label(event.kind) }} · {{ date(event.atUtc) }} · Version
+            <bdi>{{ event.viewingVersion }}</bdi>
+          </p>
+          <p>Proposed: {{ date(event.proposedStartUtc) }} — {{ date(event.proposedEndUtc) }}</p>
+          <p>
+            Confirmation: {{ date(event.confirmedStartUtc) }} — {{ date(event.confirmedEndUtc) }}
+          </p>
+          @if (staffEvent(event); as privateEvent) {
+            <p>
+              Actor: <bdi>{{ privateEvent.actorAccountId ?? 'System' }}</bdi>
+            </p>
+            <p>
+              Reason:
+              {{
+                privateEvent.actorKind === 'System' &&
+                privateEvent.reason === 'CoordinationDeadline'
+                  ? 'Coordination deadline expired'
+                  : privateEvent.actorKind === 'System' &&
+                      privateEvent.reason === 'AlternativeStart'
+                    ? 'The alternative time started before acceptance'
+                    : (privateEvent.reason ?? 'No additional reason')
+              }}
+            </p>
+            @if (privateEvent.previousConfirmedStartUtc) {
+              <p>
+                Previous confirmation: {{ date(privateEvent.previousConfirmedStartUtc) }} —
+                {{ date(privateEvent.previousConfirmedEndUtc) }}
+              </p>
+            }
+            @if (privateEvent.coordinationSource) {
+              <p>
+                Coordination source: {{ privateEvent.coordinationSource }} ·
+                {{ privateEvent.coordinationReference }}
+              </p>
+            }
+          }
+        </article>
+      } @empty {
+        <p>There is no history on this page.</p>
+      }
+      <app-crm-pager
+        label="Viewing history pages"
+        [busy]="busy() || !!pending()"
+        [page]="historyPage()"
+        [total]="history()?.total ?? 0"
+        (change)="changeHistory($event)"
+      />
+    }
+    @if (action(); as a) {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <h2>{{ actionName(a) }}</h2>
+        @if (a === 'confirm') {
+          <p>
+            Confirmation uses the current proposed start shown in project time. For a different
+            start, use Propose an alternative to the customer.
+          </p>
+        }
+        <p>
+          Enter times in your device timezone: <bdi>{{ deviceZone }}</bdi
+          >. Sent as UTC and the saved appointment is displayed in project time.
+        </p>
+        @if (a === 'submit') {
+          <p>
+            Choose a unit from the catalog and copy its reference. A linked customer profile is
+            required; linking and assignment are not automatic. The default proposed duration is one
+            hour, with a start within 30 days.
+          </p>
+        }
+        @if (a === 'change-proposal') {
+          <p>
+            Saving a reschedule immediately cancels the old confirmation; the new appointment needs
+            a new confirmation cycle.
+          </p>
+        }
+        @if (a === 'alternatives') {
+          <p>The alternative awaits customer acceptance; saving it does not confirm it.</p>
+        }
+        @if (a === 'accept-alternative') {
+          <p>
+            Accepting requests confirmation of the current alternative. The server rechecks time,
+            permissions and scheduling conflicts.
+          </p>
+        }
+        @if (a === 'outcome') {
+          <label for="viewing-outcome">Actual outcome</label
+          ><select id="viewing-outcome" [formControl]="outcome">
+            <option value="Completed">Viewing completed</option>
+            <option value="CustomerNoShow">Customer no-show</option>
+          </select>
+          <p>
+            Developer absence or broker cancellation must be recorded as a cancellation with a
+            reason, not a customer no-show. Notes are internal and are not visible to the customer.
+          </p>
+        }
+        @if (a === 'cancel' && staff) {
+          <label for="viewing-cancel-kind">Cancelling party</label
+          ><select id="viewing-cancel-kind" [formControl]="cancellationKind">
+            <option value="Broker">Broker</option>
+            <option value="Developer">Developer</option>
+          </select>
+        }
+        @for (field of fields(); track field.key) {
+          <label [for]="'viewing-' + field.key">{{ field.label }}</label>
+          @if (field.key === 'notes' || field.key === 'reason') {
+            <textarea
+              [id]="'viewing-' + field.key"
+              [formControlName]="field.key"
+              [maxlength]="field.max ?? 2000"
+              rows="4"
+              required
+            ></textarea>
+          } @else {
+            <input
+              [id]="'viewing-' + field.key"
+              [formControlName]="field.key"
+              [type]="field.type ?? 'text'"
+              [maxlength]="field.max ?? 500"
+              [required]="!field.optional"
+              [attr.step]="field.type === 'datetime-local' ? 0.001 : null"
+            />
+          }
+        }
+        <button type="submit" [disabled]="busy() || blocked() || !!pending()">
+          Save viewing action
+        </button>
+      </form>
+    }
+  </section>
+} @else {
+  <p role="alert">
+    Viewing session or permission is no longer available. Previous data was cleared.
+  </p>
+  <a routerLink="/auth/login">Sign in</a>
+}

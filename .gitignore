@@ -1,7 +1,34 @@
+# Dependencies and build outputs
+**/node_modules/
 **/bin/
 **/obj/
-.vs/
-.idea/
+**/dist/
+**/out-tsc/
+**/.angular/
+**/coverage/
+**/test-results/
+**/playwright-report/
 .artifacts/
-*.user
+outputs/
+
+# Local credentials, session captures, database files and generated certificates
 .env
+.env.*
+!.env.example
+**/*.key
+**/*.pfx
+**/*.p12
+docker/trust/*.crt
+**/*.mdf
+**/*.ldf
+**/*.bak
+**/*.log
+
+# Local editor and operating system state
+.vs/
+.vscode/
+.idea/
+**/*.user
+**/*.suo
+**/.DS_Store
+**/Thumbs.db

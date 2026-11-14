@@ -1,0 +1,43 @@
+.page-heading {
+  max-inline-size: 50rem;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.8rem;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+.eyebrow::before {
+  content: '';
+  inline-size: 1.1rem;
+  block-size: 2px;
+  background: currentColor;
+}
+h1 {
+  max-inline-size: 22ch;
+  margin: 0;
+  color: var(--color-navy);
+  font-size: var(--heading-size, clamp(1.9rem, 4vw, 3rem));
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+h1:focus {
+  outline: none;
+}
+h1:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 3px solid #986c32;
+  outline-offset: 0.35rem;
+}
+.description {
+  max-inline-size: 36rem;
+  margin: 1rem 0 0;
+  color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.9;
+}

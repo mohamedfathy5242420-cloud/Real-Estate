@@ -1,0 +1,28 @@
+:host {
+  display: block;
+  block-size: 100%;
+  min-inline-size: 0;
+}
+.visual {
+  position: relative;
+  block-size: 100%;
+  min-block-size: 12rem;
+  background: #d9e0d7 url('/illustrations/garden.svg') center / cover no-repeat;
+}
+.visual--coast {
+  background-image: url('/illustrations/coast.svg');
+}
+.visual--city {
+  background-image: url('/illustrations/city.svg');
+}
+.visual-label {
+  position: absolute;
+  inset-block-end: 0.9rem;
+  inset-inline-end: 0.9rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 0.4rem;
+  background: rgb(255 255 255 / 90%);
+  color: #314a42;
+  font-size: 0.65rem;
+  line-height: 1.6;
+}

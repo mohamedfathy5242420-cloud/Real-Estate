@@ -1,0 +1,78 @@
+<app-page-heading
+  eyebrow="System administration"
+  title="Create staff account"
+  description="Create the sign-in account, then its owner confirms their email. Employee profile creation and customer assignment are separate steps."
+/>
+<section class="account-panel" [attr.aria-busy]="busy()">
+  @if (canCreate()) {
+    @if (error()) {
+      <p class="message error" role="alert">{{ error() }}</p>
+    }
+    @if (fields().length) {
+      <ul aria-label="Fields requiring review">
+        @for (field of fields(); track $index) {
+          <li>{{ field }}</li>
+        }
+      </ul>
+    }
+    @if (result(); as created) {
+      <div class="message success" role="status">
+        Account created <bdi>{{ created.email }}</bdi> With role {{ labels[created.role] }}.
+        Requires confirmation of email before sign-in; no profile was created CRM.
+        @if (created.role === 'SalesEmployee' || created.role === 'SalesManager') {
+          <a routerLink="/admin/employees" [queryParams]="{ accountId: created.id }"
+            >Prepare employee profile after email confirmation</a
+          >
+        }
+      </div>
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label for="staff-email">Email</label
+      ><input
+        id="staff-email"
+        type="email"
+        dir="ltr"
+        autocomplete="off"
+        formControlName="email"
+        required
+      />
+      <label for="staff-phone">Phone number</label
+      ><input
+        id="staff-phone"
+        type="tel"
+        dir="ltr"
+        autocomplete="off"
+        formControlName="phoneNumber"
+        required
+      />
+      <label for="staff-role">Role</label
+      ><select id="staff-role" formControlName="role">
+        @for (role of roles; track role) {
+          <option [value]="role">{{ labels[role] }}</option>
+        }
+      </select>
+      <label for="staff-password">Initial password</label
+      ><input
+        id="staff-password"
+        type="password"
+        dir="ltr"
+        autocomplete="new-password"
+        formControlName="password"
+        required
+      />
+      <p class="hint">
+        At least 8 characters with uppercase, lowercase, a number and a symbol. Local operation does
+        not send real email; the confirmation link is stored through local delivery.
+      </p>
+      <button type="submit" [disabled]="busy()">
+        {{ busy() ? 'Creating account…' : 'Create account' }}
+      </button>
+    </form>
+  } @else {
+    <p role="alert">Session expired or page permission was revoked. Previous data was cleared.</p>
+    <a routerLink="/auth/login" [queryParams]="{ returnUrl: '/admin/staff-accounts' }">Sign in</a>
+  }
+  <nav aria-label="Administration links">
+    <a routerLink="/workspace">Workspace</a><a routerLink="/auth/session">My account</a>
+  </nav>
+</section>

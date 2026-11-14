@@ -1,0 +1,97 @@
+<app-page-heading
+  eyebrow="Follow-up"
+  title="Sales reports"
+  description="Activity follows current permissions; commission and collection are separated by currency and kept separate from deposits."
+/>
+@if (allowed()) {
+  <section class="account-panel" [attr.aria-busy]="busy()">
+    @if (busy()) {
+      <p role="status">Reading current report…</p>
+    }
+    @if (error()) {
+      <p role="alert" class="message error">
+        {{ error() }} Report unavailable; this is not a zero balance.
+      </p>
+    }
+    <nav aria-label="Report tools">
+      <button type="button" [disabled]="busy()" (click)="reload()">Reload reports</button
+      ><a routerLink="/workspace">Workspace</a>
+      @if (manager) {
+        <a routerLink="/admin/deals">Deals and commissions</a>
+      } @else {
+        <a routerLink="/employee/clients">Assigned customers</a>
+      }
+    </nav>
+    <form [formGroup]="activityFilters" (ngSubmit)="apply()">
+      <h2>Activity report period</h2>
+      <p>
+        These boundaries are days in UTC for activity events, separate from local sale days in the
+        commission report. The scope in the server response reflects your current permissions.
+      </p>
+      <label for="report-from-utc">From day UTC (Optional)</label
+      ><input id="report-from-utc" type="date" formControlName="fromUtcDate" /><label
+        for="report-through-utc"
+        >To day UTC (Optional)</label
+      ><input id="report-through-utc" type="date" formControlName="throughUtcDate" /><button
+        type="submit"
+        [disabled]="busy()"
+      >
+        Apply activity period
+      </button>
+    </form>
+    @if (activity(); as report) {
+      <section aria-label="Current activity report">
+        <h2>Activity under current permissions</h2>
+        <app-sales-fields [record]="report" zone="UTC" />
+      </section>
+    }
+    @if (manager) {
+      <form [formGroup]="commissionFilters" (ngSubmit)="apply()">
+        <h2>Filter saved commission and collection</h2>
+        <p>
+          The period uses the local sale day saved in the deal snapshot. Each currency total is
+          separate and is not recalculated from the current agreement.
+        </p>
+        @for (field of fields; track field[0]) {
+          <label [for]="'report-' + field[0]">{{ field[1] }} (Optional)</label
+          ><input
+            [id]="'report-' + field[0]"
+            [type]="field[2]"
+            [formControlName]="field[0]"
+            maxlength="40"
+          />
+        }
+        <button type="submit" [disabled]="busy()">Apply commission filter</button>
+      </form>
+      <section aria-label="Commission report by currency">
+        <h2>Commission and collection by currency</h2>
+        <p>
+          Collections here are actual commission facts; deposits and refunds are excluded. There is
+          no total combining different currencies.
+        </p>
+        @for (row of totals()?.items ?? []; track row.currencyCode) {
+          <article>
+            <h3>{{ row.currencyCode }}</h3>
+            <app-sales-fields [record]="row" />
+          </article>
+        } @empty {
+          @if (!busy() && !error()) {
+            <p>No currencies or deals match on this page.</p>
+          }
+        }
+        <app-crm-pager
+          label="Commission report currency pages"
+          [busy]="busy()"
+          [page]="page()"
+          [total]="totals()?.total ?? 0"
+          (change)="move($event)"
+        />
+      </section>
+    }
+  </section>
+} @else {
+  <p role="alert">
+    Report session or permission is no longer available. Previous results were cleared.
+  </p>
+  <a routerLink="/auth/login">Sign in</a>
+}

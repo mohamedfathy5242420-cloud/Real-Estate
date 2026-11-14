@@ -1,0 +1,58 @@
+<article class="property-card">
+  <div class="property-art">
+    @if (property().imageUrl) {
+      <img
+        [src]="property().imageUrl"
+        [alt]="property().imageAlt || property().title"
+        loading="lazy"
+        style="width: 100%; height: 100%; object-fit: cover"
+      />
+    } @else {
+      <app-property-visual [unitId]="property().id" />
+    }
+    @if (demo()) {
+      <span class="sample-label">Demo property</span>
+    }
+    <span class="art-caption">{{ property().location }}</span>
+  </div>
+  <div class="card-body">
+    <p class="property-project">{{ property().project }} · {{ property().developer }}</p>
+    <h3>
+      <a
+        [routerLink]="['/catalog', property().id]"
+        [attr.aria-label]="'View details for ' + property().title"
+        >{{ property().title }}</a
+      >
+    </h3>
+    <p class="property-location">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" />
+        <circle cx="12" cy="10" r="2" /></svg
+      >{{ property().location }}
+    </p>
+    <dl class="property-facts">
+      <div>
+        <dt>Bedrooms</dt>
+        <dd>{{ property().bedrooms | displayNumber }}</dd>
+      </div>
+      <div>
+        <dt>Area</dt>
+        <dd>{{ property().areaSquareMetres | displayNumber }} sq m</dd>
+      </div>
+    </dl>
+    <div class="price-row">
+      <div>
+        <p class="price-label">{{ demo() ? 'Illustrative price' : 'List price' }}</p>
+        <p class="property-price">
+          <bdi>{{ property().price.amount | displayCurrency: property().price.currency }}</bdi>
+        </p>
+      </div>
+      <span class="card-arrow" aria-hidden="true">↖</span>
+    </div>
+    @if (demo()) {
+      <p class="sample-note">Demo data. Unit availability is unconfirmed.</p>
+    } @else {
+      <p class="sample-note">A listing does not confirm availability or a booking.</p>
+    }
+  </div>
+</article>

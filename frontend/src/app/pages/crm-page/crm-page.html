@@ -1,0 +1,439 @@
+<app-page-heading
+  eyebrow="Sales follow-up"
+  [title]="manager() ? 'Customers, assignment and follow-up' : 'Assigned customers and follow-up'"
+  description="Current data and permissions come from the server. Leads and notes do not confirm a booking or unit availability."
+/>
+@if (allowed()) {
+  <section class="account-panel" [attr.aria-busy]="busy()">
+    @if (busy()) {
+      <p role="status">Contacting the server…</p>
+    }
+    @if (error()) {
+      <p class="message error" role="alert">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p class="message success" role="status">{{ message() }}</p>
+    }
+    @if (pending()) {
+      <aside aria-label="Confirm unresolved operation">
+        <p>
+          Original data and key are stored on this page until the result is confirmed. Leaving loses
+          the saved copy; review history before a new operation.
+        </p>
+        <button type="button" [disabled]="busy()" (click)="recover()">
+          Confirm the same saved operation
+        </button>
+      </aside>
+    }
+    <nav aria-label="Customer tools">
+      <button type="button" [disabled]="busy()" (click)="reload()">Reload customers</button>
+      @if (manager()) {
+        <a routerLink="/admin/customer-links">Review account link requests</a>
+      }
+      <a routerLink="/workspace">Workspace</a>
+    </nav>
+    <fieldset>
+      <legend>Follow-up list</legend>
+      <label for="crm-queue">List</label
+      ><select id="crm-queue" [formControl]="queue" (change)="changeQueue()">
+        <option value="customers">
+          {{ manager() ? 'All customers' : 'My current customers' }}
+        </option>
+        <option value="followups">Requirements and notes follow-up</option>
+        @if (manager()) {
+          <option value="unassigned">Unassigned</option>
+        }
+      </select>
+      @if (queue.value === 'followups') {
+        <label for="crm-has-needs">Requirements present</label
+        ><select id="crm-has-needs" [formControl]="hasRequirements">
+          <option value="">All</option>
+          <option value="true">Has requirements</option>
+          <option value="false">No requirements</option>
+        </select>
+        <label for="crm-has-notes">Notes present</label
+        ><select id="crm-has-notes" [formControl]="hasNotes">
+          <option value="">All</option>
+          <option value="true">Has notes</option>
+          <option value="false">No notes</option></select
+        ><button type="button" [disabled]="busy() || !!pending()" (click)="changeQueue()">
+          Apply follow-up filters
+        </button>
+      }
+      <ul>
+        @for (item of customers()?.items ?? []; track item.id) {
+          <li>
+            <button type="button" [disabled]="busy() || !!pending()" (click)="open(item.id)">
+              {{ item.fullName }} — {{ item.phone }}
+            </button>
+          </li>
+        } @empty {
+          <li>No customers are available on this page.</li>
+        }
+      </ul>
+      <app-crm-pager
+        label="Customer pages"
+        [busy]="busy() || !!pending()"
+        [page]="listPage()"
+        [total]="customers()?.total ?? 0"
+        (change)="changeList($event)"
+      />
+    </fieldset>
+    @if (manager()) {
+      <details>
+        <summary>Add customer as manager</summary>
+        <form [formGroup]="intakeForm" (ngSubmit)="intake()">
+          <app-customer-fields [form]="intakeForm" /><button
+            type="submit"
+            [disabled]="!canMutate()"
+          >
+            Add new customer
+          </button>
+          <p>
+            Creates a profile without a linked sign-in account; assignment and review are separate
+            steps.
+          </p>
+        </form>
+      </details>
+    }
+    @if (current(); as customer) {
+      <section aria-label="Current customer profile">
+        <h2>{{ customer.fullName }}</h2>
+        <dl>
+          <dt>Customer reference</dt>
+          <dd>
+            <bdi>{{ customer.id }}</bdi>
+          </dd>
+          <dt>Phone</dt>
+          <dd>
+            <bdi>{{ customer.phone }}</bdi>
+          </dd>
+          <dt>Email</dt>
+          <dd>{{ customer.email ?? 'Not recorded' }}</dd>
+          <dt>Contact method</dt>
+          <dd>{{ customer.preferredContactMethod ?? 'Not recorded' }}</dd>
+          <dt>Current assignee</dt>
+          <dd>
+            <bdi>{{ customer.assignedEmployeeId ?? 'Unassigned' }}</bdi>
+          </dd>
+          <dt>Profile version</dt>
+          <dd>
+            <bdi>{{ customer.version }}</bdi>
+          </dd>
+        </dl>
+        @if (manager()) {
+          <fieldset>
+            <legend>
+              {{
+                customer.assignedEmployeeId ? 'Transfer customer responsibility' : 'Assign customer'
+              }}
+            </legend>
+            <button type="button" [disabled]="busy() || !!pending()" (click)="getCandidates()">
+              Load eligible employees</button
+            ><label for="assignment-target">New assigned employee</label
+            ><select id="assignment-target" [formControl]="target">
+              <option value="">Select an employee</option>
+              @for (employee of candidates()?.items ?? []; track employee.id) {
+                <option [value]="employee.id">
+                  {{ employee.employeeNumber }} — {{ employee.displayName }}
+                </option>
+              }</select
+            ><app-crm-pager
+              label="Eligible employee pages"
+              [busy]="busy() || !!pending()"
+              [page]="candidatePage()"
+              [total]="candidates()?.total ?? 0"
+              (change)="getCandidates($event)"
+            /><label for="assignment-reason">Assignment or transfer reason</label
+            ><textarea
+              id="assignment-reason"
+              [formControl]="assignmentReason"
+              maxlength="2000"
+            ></textarea
+            ><button type="button" [disabled]="!canMutate()" (click)="assign()">
+              {{ customer.assignedEmployeeId ? 'Transfer responsibility' : 'Confirm assignment' }}
+            </button>
+          </fieldset>
+        }
+        <fieldset>
+          <legend>Customer requirements</legend>
+          <label for="sales-requirements">Current requirements</label
+          ><textarea
+            id="sales-requirements"
+            [formControl]="requirements"
+            maxlength="2000"
+          ></textarea>
+          <p>Saving empty text explicitly clears requirements while preserving change history.</p>
+          <button type="button" [disabled]="!canMutate()" (click)="saveNeeds()">
+            Save requirements
+          </button>
+        </fieldset>
+        <details>
+          <summary>Requirements history</summary>
+          @for (entry of needs()?.items ?? []; track entry.id) {
+            <article>
+              <p>Before: {{ entry.previousRequirements ?? 'Empty' }}</p>
+              <p>After: {{ entry.requirements ?? 'Empty' }}</p>
+              <p>
+                Version {{ entry.customerVersion }} · {{ entry.atUtc | date: 'medium' }} ·
+                <bdi>{{ entry.actorAccountId }}</bdi>
+              </p>
+            </article>
+          } @empty {
+            <p>There are no changes on this page.</p>
+          }
+          <app-crm-pager
+            label="Requirements history pages"
+            [busy]="busy() || !!pending()"
+            [page]="pages().needs"
+            [total]="needs()?.total ?? 0"
+            (change)="detailPage('needs', $event)"
+          />
+        </details>
+        <details>
+          <summary>Customer assignment history</summary>
+          @for (entry of assignments()?.items ?? []; track entry.id) {
+            <article>
+              <p>
+                From <bdi>{{ entry.previousEmployeeId ?? 'Unassigned' }}</bdi> To
+                <bdi>{{ entry.newEmployeeId }}</bdi>
+              </p>
+              <p>
+                {{ entry.reason ?? 'No additional reason' }} ·
+                {{ entry.changedAtUtc | date: 'medium' }}
+              </p>
+              <p>
+                Actor <bdi>{{ entry.actorAccountId }}</bdi> · Version {{ entry.customerVersion }}
+              </p>
+            </article>
+          } @empty {
+            <p>There are no assignments on this page.</p>
+          }
+          <app-crm-pager
+            label="Assignment history pages"
+            [busy]="busy() || !!pending()"
+            [page]="pages().assignments"
+            [total]="assignments()?.total ?? 0"
+            (change)="detailPage('assignments', $event)"
+          />
+        </details>
+        <fieldset>
+          <legend>{{ correction() ? 'Add a note correction' : 'Add follow-up note' }}</legend>
+          @if (correction(); as original) {
+            <p>Original note: {{ original.body }}</p>
+            <p>A correction is a new record and does not change the original text.</p>
+            <button
+              type="button"
+              [disabled]="busy() || !!pending()"
+              (click)="startCorrection(null)"
+            >
+              Clear correction selection
+            </button>
+          }
+          <form [formGroup]="noteForm" (ngSubmit)="addNote()">
+            <label for="sales-note-body">Note or correction text</label
+            ><textarea
+              id="sales-note-body"
+              formControlName="body"
+              maxlength="2000"
+              required
+            ></textarea>
+            @if (!correction()) {
+              <label for="sales-note-lead">Lead reference (optional)</label
+              ><input id="sales-note-lead" formControlName="leadId" dir="ltr" />
+            }
+            <button type="submit" [disabled]="!canMutate()">
+              {{ correction() ? 'Save correction as a new record' : 'Add note' }}
+            </button>
+          </form>
+        </fieldset>
+        <h3>Notes and corrections</h3>
+        @for (note of notes()?.items ?? []; track note.id) {
+          <article>
+            <p>{{ note.body }}</p>
+            @if (note.correctsNoteId) {
+              <p>
+                Correction for note <bdi>{{ note.correctsNoteId }}</bdi>
+              </p>
+            }
+            @if (note.leadId) {
+              <p>
+                Lead <bdi>{{ note.leadId }}</bdi>
+              </p>
+            }
+            <p>
+              {{ note.createdAtUtc | date: 'medium' }} · Author
+              <bdi>{{ note.authorAccountId }}</bdi>
+            </p>
+            <button type="button" [disabled]="!canMutate()" (click)="startCorrection(note)">
+              Add a correction to this note
+            </button>
+          </article>
+        } @empty {
+          <p>There are no notes on this page.</p>
+        }
+        <app-crm-pager
+          label="Note pages"
+          [busy]="busy() || !!pending()"
+          [page]="pages().notes"
+          [total]="notes()?.total ?? 0"
+          (change)="detailPage('notes', $event)"
+        />
+        <fieldset>
+          <legend>Open a project lead</legend>
+          <p>
+            One open lead per customer and project. The server checks marketing agreement
+            eligibility and saves the protection origin.
+          </p>
+          <details>
+            <summary>Select a project from public listings</summary>
+            <label for="crm-project-search">Search published projects</label
+            ><input id="crm-project-search" [formControl]="projectSearch" /><button
+              type="button"
+              [disabled]="busy()"
+              (click)="searchProjects()"
+            >
+              Search public listings
+            </button>
+            @for (unit of publicProjects()?.items ?? []; track unit.id) {
+              <p>
+                <button
+                  type="button"
+                  [disabled]="busy() || !!pending()"
+                  (click)="useProject(unit.projectId)"
+                >
+                  {{ unit.project }} — {{ unit.title }}
+                </button>
+              </p>
+            }
+            <app-crm-pager
+              label="Public listing pages"
+              [busy]="busy()"
+              [page]="projectPage()"
+              [total]="publicProjects()?.total ?? 0"
+              (change)="searchProjects($event)"
+            />
+          </details>
+          <p>
+            For an unpublished project, use its approved reference from catalog management. Public
+            search does not establish marketing agreement eligibility.
+          </p>
+          <form [formGroup]="leadForm" (ngSubmit)="openLead()">
+            <label for="lead-project">Project reference</label
+            ><input id="lead-project" formControlName="projectId" dir="ltr" required /><label
+              for="lead-source"
+              >Lead source</label
+            ><input id="lead-source" formControlName="source" maxlength="100" required /><button
+              type="submit"
+              [disabled]="!canMutate()"
+            >
+              Open lead
+            </button>
+          </form>
+        </fieldset>
+        <h3>Leads</h3>
+        <label for="lead-filter">Lead status</label
+        ><select id="lead-filter" [formControl]="leadFilter" (change)="filterLeads()">
+          <option value="">All statuses</option>
+          <option value="Open">Open</option>
+          <option value="Closed">Closed</option>
+        </select>
+        @for (lead of leads()?.items ?? []; track lead.id) {
+          <article>
+            <p>
+              Project <bdi>{{ lead.projectId }}</bdi> ·
+              {{ lead.status === 'Open' ? 'Open' : 'Closed' }}
+            </p>
+            <button type="button" [disabled]="busy() || !!pending()" (click)="inspectLead(lead)">
+              Lead details and history
+            </button>
+          </article>
+        } @empty {
+          <p>There are no leads on this page.</p>
+        }
+        <app-crm-pager
+          label="Lead pages"
+          [busy]="busy() || !!pending()"
+          [page]="pages().leads"
+          [total]="leads()?.total ?? 0"
+          (change)="detailPage('leads', $event)"
+        />
+        @if (selectedLead(); as lead) {
+          <section aria-label="Lead details">
+            <h3>Lead origin</h3>
+            <dl>
+              <dt>Lead reference</dt>
+              <dd>
+                <bdi>{{ lead.id }}</bdi>
+              </dd>
+              <dt>Original marketing agreement</dt>
+              <dd>
+                <bdi>{{ lead.marketingAgreementId }}</bdi> · Version
+                {{ lead.agreementVersionAtOpening }}
+              </dd>
+              <dt>Agreement period</dt>
+              <dd>{{ lead.agreementStartsOn }} — {{ lead.agreementEndsOn }}</dd>
+              <dt>Protection</dt>
+              <dd>{{ lead.protectionPeriodDays }} Day · Until {{ lead.protectionEndsOn }}</dd>
+              <dt>Local opening date</dt>
+              <dd>
+                {{ lead.openedOnLocalDate }} · <bdi>{{ lead.openingTimeZoneId }}</bdi>
+              </dd>
+              <dt>Opening time UTC</dt>
+              <dd>
+                <bdi>{{ lead.openedAtUtc }}</bdi>
+              </dd>
+              <dt>Source</dt>
+              <dd>{{ lead.source }}</dd>
+              <dt>Lead version</dt>
+              <dd>{{ lead.version }}</dd>
+            </dl>
+            @if (lead.status === 'Open') {
+              <label for="lead-close-reason">Lead closure reason</label
+              ><textarea
+                id="lead-close-reason"
+                [formControl]="closeReason"
+                maxlength="2000"
+                required
+              ></textarea
+              ><button type="button" [disabled]="!canMutate()" (click)="closeLead()">
+                Close lead
+              </button>
+            } @else {
+              <p>Closure reason: {{ lead.closeReason }}</p>
+            }
+            <h4>Lead history</h4>
+            @for (event of leadEvents()?.items ?? []; track event.id) {
+              <article>
+                <p>
+                  {{
+                    event.eventType === 'Opened'
+                      ? 'Lead opened'
+                      : event.eventType === 'Closed'
+                        ? 'Lead closed'
+                        : 'Recorded follow-up event'
+                  }}
+                  · {{ event.reason ?? 'No additional reason' }} ·
+                  {{ event.atUtc | date: 'medium' }} · Version {{ event.leadVersion }}
+                </p>
+                <p>
+                  Actor <bdi>{{ event.actorAccountId }}</bdi>
+                </p>
+              </article>
+            }
+            <app-crm-pager
+              label="Lead history pages"
+              [busy]="busy() || !!pending()"
+              [page]="leadEventPage()"
+              [total]="leadEvents()?.total ?? 0"
+              (change)="inspectLead(lead, $event)"
+            />
+          </section>
+        }
+      </section>
+    }
+  </section>
+} @else {
+  <p role="alert">Sales session or permission is no longer available. Previous data was cleared.</p>
+  <a routerLink="/auth/login">Sign in</a>
+}

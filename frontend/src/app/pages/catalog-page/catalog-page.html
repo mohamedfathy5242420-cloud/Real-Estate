@@ -1,0 +1,267 @@
+<section class="catalog-hero" aria-label="Discover your next home">
+  <div class="hero-copy">
+    <app-page-heading
+      eyebrow="Discover properties"
+      title="Find your next property"
+      description="Start with an area, project name or a word describing your property."
+    />
+    <p class="hero-footnote">Browse freely and take your time finding the right property.</p>
+  </div>
+  <div class="hero-art"><app-property-visual /></div>
+</section>
+
+@if (demo) {
+  <aside class="demo-banner" aria-label="Demo data notice">
+    <strong>Demo catalog</strong>
+    <p>
+      All displayed properties, projects and prices are fictional examples for testing. They are not
+      actual listings or bookings.
+    </p>
+  </aside>
+}
+
+<div class="catalog-layout">
+  <section class="search-panel" aria-labelledby="search-heading">
+    <div class="search-intro">
+      <p class="section-kicker">Every home starts with a step</p>
+      <h2 id="search-heading">What are you looking for?</h2>
+    </div>
+    <form
+      [formGroup]="searchForm"
+      (ngSubmit)="applySearch()"
+      role="search"
+      aria-label="Find a property"
+    >
+      <label for="catalog-query">Area, project or keyword</label>
+      <input
+        id="catalog-query"
+        type="search"
+        formControlName="query"
+        placeholder="For example: New Cairo"
+        aria-describedby="search-hint search-error"
+        [attr.aria-invalid]="submitted() && searchForm.invalid ? 'true' : null"
+      />
+      <p class="field-hint" id="search-hint">
+        Enter up to {{ demo ? '120' : '200' }} characters. Applied search is saved in the page URL.
+      </p>
+      <div id="search-error">
+        @if (submitted() && searchForm.invalid) {
+          <p class="field-error" role="alert">
+            Enter {{ demo ? '120' : '200' }} characters or fewer to search.
+          </p>
+        }
+      </div>
+      @if (!demo) {
+        <details class="advanced-filters">
+          <summary>Search and sort filters</summary>
+          <div [formGroup]="filterForm" class="filter-grid">
+            <label>Area<input id="filter-area" formControlName="area" maxlength="200" /></label>
+            <label
+              >Unit type<input id="filter-unitType" formControlName="unitType" maxlength="100"
+            /></label>
+            <label
+              >Project from current results<select
+                id="filter-projectId"
+                formControlName="projectId"
+              >
+                <option value="">All projects</option>
+                @if (filterForm.controls['projectId'].value) {
+                  <option [value]="filterForm.controls['projectId'].value">Selected project</option>
+                }
+                @for (option of projectOptions(); track option[0]) {
+                  <option [value]="option[0]">{{ option[1] }}</option>
+                }
+              </select></label
+            >
+            <label
+              >Developer from current results<select
+                id="filter-developerId"
+                formControlName="developerId"
+              >
+                <option value="">All developers</option>
+                @if (filterForm.controls['developerId'].value) {
+                  <option [value]="filterForm.controls['developerId'].value">
+                    Selected developer
+                  </option>
+                }
+                @for (option of developerOptions(); track option[0]) {
+                  <option [value]="option[0]">{{ option[1] }}</option>
+                }
+              </select></label
+            >
+            <label
+              >Bedrooms<input
+                id="filter-bedrooms"
+                formControlName="bedrooms"
+                inputmode="numeric"
+                dir="ltr"
+            /></label>
+            <label
+              >Currency<input
+                id="filter-currency"
+                formControlName="currency"
+                maxlength="3"
+                placeholder="EGP"
+                dir="ltr"
+            /></label>
+            <label
+              >Price from<input
+                id="filter-minPrice"
+                formControlName="minPrice"
+                inputmode="decimal"
+                dir="ltr" /></label
+            ><label
+              >Price to<input
+                id="filter-maxPrice"
+                formControlName="maxPrice"
+                inputmode="decimal"
+                dir="ltr"
+            /></label>
+            <label
+              >Area from<input
+                id="filter-minArea"
+                formControlName="minArea"
+                inputmode="decimal"
+                dir="ltr" /></label
+            ><label
+              >Area to<input
+                id="filter-maxArea"
+                formControlName="maxArea"
+                inputmode="decimal"
+                dir="ltr"
+            /></label>
+            <label
+              >Order<select id="filter-sort" formControlName="sort">
+                <option value="">Newest</option>
+                <option value="newest">Newest first</option>
+                <option value="priceAsc">Price: low to high</option>
+                <option value="priceDesc">Price: high to low</option>
+                <option value="areaAsc">Area: low to high</option>
+                <option value="areaDesc">Area: high to low</option>
+              </select></label
+            >
+            <label
+              >Results per page<select id="filter-pageSize" formControlName="pageSize">
+                <option value="">20 results</option>
+                <option value="20">20 results</option>
+                <option value="50">50 results</option>
+                <option value="100">100 results</option>
+              </select></label
+            >
+          </div>
+          <p class="field-hint">
+            Use currency with price limits or price sorting. Developer and project options come from
+            current results, not the entire catalog.
+          </p>
+        </details>
+        @if (filterError()) {
+          <p role="alert" class="field-error">{{ filterError() }}</p>
+        }
+      }
+      <div class="search-actions">
+        <button class="apply-button" type="submit">Search</button>
+        <button class="reset-button" type="button" (click)="resetSearch()">Clear search</button>
+      </div>
+    </form>
+  </section>
+
+  @let state = catalog.state();
+  <section
+    class="catalog-content"
+    aria-labelledby="catalog-status-heading"
+    [attr.aria-busy]="state.kind === 'loading' ? 'true' : 'false'"
+  >
+    <div class="results-heading">
+      <p class="section-kicker">Property catalog</p>
+      <h2 id="catalog-status-heading">
+        {{ demo ? 'Explore demo properties' : 'Explore properties' }}
+      </h2>
+      @if (appliedQuery()) {
+        <p class="search-summary" aria-live="polite">
+          Saved search:
+          <strong
+            ><bdi>{{ appliedQuery() }}</bdi></strong
+          >
+        </p>
+      }
+    </div>
+    @if (navigationError()) {
+      <app-ui-state
+        tone="error"
+        title="Could not save search"
+        message="Your input is kept here. Try applying the search again."
+        announcement="assertive"
+      />
+    }
+    @switch (state.kind) {
+      @case ('loading') {
+        <app-ui-state
+          tone="loading"
+          title="Loading properties"
+          message="Loading your selected search results."
+          announcement="polite"
+        />
+      }
+      @case ('empty') {
+        <app-ui-state
+          tone="empty"
+          [title]="
+            demo ? 'No demo properties match your search' : 'No properties match your search'
+          "
+          message="Try a different area or keyword, or clear the search."
+          announcement="polite"
+        />
+        @if (!demo && page() > 1) {
+          <a [routerLink]="[]" [queryParams]="{ page: page() - 1 }" queryParamsHandling="merge"
+            >Back to previous page</a
+          >
+        }
+      }
+      @case ('invalid') {
+        <app-ui-state
+          tone="error"
+          title="Review search filters"
+          message="Invalid search values or limits. Edit filters and apply the search."
+          announcement="assertive"
+        />
+      }
+      @case ('error') {
+        <app-ui-state
+          tone="error"
+          title="Could not load properties"
+          message="Your search is saved. Try again."
+          announcement="assertive"
+        />
+        <button class="retry-button" type="button" (click)="catalog.retry()">Try again</button>
+      }
+      @case ('ready') {
+        <p class="result-count" role="status">
+          {{ state.result.total | displayNumber }} {{ demo ? 'demo properties' : 'properties' }}
+        </p>
+        <ul class="property-grid" aria-label="Property search results">
+          @for (property of state.result.items; track property.id) {
+            <li><app-property-card [property]="property" [demo]="demo" /></li>
+          }
+        </ul>
+        @if (!demo && (state.result.pageSize ?? 20) < state.result.total) {
+          <nav aria-label="Property results pages">
+            @if (page() > 1) {
+              <a [routerLink]="[]" [queryParams]="{ page: page() - 1 }" queryParamsHandling="merge"
+                >Previous page</a
+              >
+            }
+            <span>Page {{ page() | displayNumber }}</span>
+            @if (page() * (state.result.pageSize ?? 20) < state.result.total) {
+              <a [routerLink]="[]" [queryParams]="{ page: page() + 1 }" queryParamsHandling="merge"
+                >Next page</a
+              >
+            }
+          </nav>
+        }
+      }
+    }
+    <p class="catalog-note">
+      Anyone can browse. Viewing and booking requests require a customer account.
+    </p>
+  </section>
+</div>

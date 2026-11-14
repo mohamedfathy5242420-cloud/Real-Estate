@@ -1,0 +1,164 @@
+<a class="back-link" routerLink="/catalog">Back to property catalog</a>
+<app-page-heading eyebrow="Property details" [title]="title()" [description]="subtitle()" />
+@if (demo) {
+  <aside class="demo-notice" aria-label="Demo unit notice">
+    <strong>Demo unit</strong>
+    <p>
+      The information, projects and prices are fictional examples. They do not represent an actual
+      offer, availability or booking.
+    </p>
+  </aside>
+}
+@let state = detail.state();
+<section
+  class="detail-content"
+  aria-label="Unit details"
+  [attr.aria-busy]="state.kind === 'loading' ? 'true' : 'false'"
+>
+  @switch (state.kind) {
+    @case ('loading') {
+      <app-ui-state
+        tone="loading"
+        title="Loading unit details"
+        message="Please wait for the information to load."
+        announcement="polite"
+      />
+    }
+    @case ('not-found') {
+      <app-ui-state
+        tone="empty"
+        title="Unit not found"
+        message="We could not find this unit. Choose another from the catalog."
+        announcement="polite"
+      />
+    }
+    @case ('error') {
+      <app-ui-state
+        tone="error"
+        title="Could not load unit details"
+        message="Try again. No viewing or booking request was submitted."
+        announcement="assertive"
+      />
+      <button type="button" class="retry-button" (click)="detail.retry()">Try again</button>
+    }
+    @case ('ready') {
+      @let unit = state.unit;
+      <div class="detail-layout">
+        <div class="information">
+          <figure class="unit-art">
+            <div class="illustration">
+              @if (unit.imageUrl) {
+                <img
+                  [src]="unit.imageUrl"
+                  [alt]="unit.imageAlt || unit.title"
+                  style="width: 100%; height: 100%; object-fit: cover"
+                />
+              } @else {
+                <app-property-visual [unitId]="unit.id" />
+              }
+            </div>
+            <figcaption>
+              {{
+                unit.imageUrl
+                  ? unit.imageAlt || 'Image from listing data.'
+                  : 'Illustration, not a photograph of the property.'
+              }}
+            </figcaption>
+          </figure>
+          <section class="surface" aria-labelledby="description-heading">
+            <h2 id="description-heading">About this unit</h2>
+            <p class="unit-description">{{ unit.description }}</p>
+            <dl class="unit-facts">
+              <div>
+                <dt>Area</dt>
+                <dd>{{ unit.location }}</dd>
+              </div>
+              <div>
+                <dt>Project</dt>
+                <dd>{{ unit.project }}</dd>
+              </div>
+              <div>
+                <dt>Developer</dt>
+                <dd>{{ unit.developer }}</dd>
+              </div>
+              <div>
+                <dt>Bedrooms</dt>
+                <dd>{{ unit.bedrooms | displayNumber }}</dd>
+              </div>
+              <div>
+                <dt>Area</dt>
+                <dd>{{ unit.areaSquareMetres | displayNumber }} sq m</dd>
+              </div>
+            </dl>
+            @if (unit.features.length) {
+              <h3>Unit features</h3>
+              <ul class="features">
+                @for (feature of unit.features; track $index) {
+                  <li>{{ feature }}</li>
+                }
+              </ul>
+            }
+          </section>
+        </div>
+        <aside class="surface request-panel" aria-labelledby="price-heading">
+          <p class="section-label">{{ demo ? 'Illustrative price' : 'List price' }}</p>
+          <h2 class="unit-price" id="price-heading">
+            <bdi>{{ unit.price.amount | displayCurrency: unit.price.currency }}</bdi>
+          </h2>
+          <p class="availability-note">
+            @if (demo) {
+              Unit availability is unconfirmed.
+            }
+            Actual price and availability require developer confirmation. A listing does not confirm
+            a booking.
+          </p>
+          @if (unit.availability; as availability) {
+            <p>
+              Recorded availability:
+              {{
+                availability.status === 'Available'
+                  ? 'Available according to the latest record'
+                  : availability.status === 'Unavailable'
+                    ? 'Unavailable according to the latest record'
+                    : 'Unconfirmed'
+              }}.
+            </p>
+            <p>
+              {{
+                availability.freshness === 'fresh'
+                  ? 'The recorded availability confirmation is recent; a booking still requires external confirmation.'
+                  : availability.freshness === 'stale'
+                    ? 'The availability confirmation is outdated; check with the developer before requesting.'
+                    : 'No availability confirmation is recorded.'
+              }}
+            </p>
+          }
+          <div class="request-note">
+            <h3>Viewings and bookings</h3>
+            <p>
+              Viewing and booking requests require a customer account. A viewing is not required
+              before a booking request. A request does not confirm a booking.
+            </p>
+            <p id="account-entry-note">
+              Viewing and booking requests are available to customer accounts. Confirmation follows
+              coordination and a developer response. Opening the page does not submit a request.
+            </p>
+            <a class="account-link" routerLink="/my/viewings" [queryParams]="{ unitId: unit.id }"
+              >Open viewing request form</a
+            >
+            <a class="account-link" routerLink="/my/bookings" [queryParams]="{ unitId: unit.id }"
+              >Open booking request form</a
+            >
+            <a
+              class="account-link"
+              routerLink="/auth/login"
+              [queryParams]="{ returnUrl: unitRoute() }"
+              aria-describedby="account-entry-note"
+              >Open sign-in page</a
+            >
+          </div>
+        </aside>
+      </div>
+    }
+  }
+</section>

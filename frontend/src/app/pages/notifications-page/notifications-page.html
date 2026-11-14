@@ -1,0 +1,95 @@
+<app-page-heading
+  eyebrow="Follow-up"
+  title="Notifications"
+  description="Notifications reflect your current permissions. Open the request to review its current state."
+/>
+@if (allowed()) {
+  <section class="account-panel" [attr.aria-busy]="busy()">
+    <nav aria-label="Notification tools">
+      <button type="button" [disabled]="busy()" (click)="reload()">Reload notifications</button
+      ><a routerLink="/workspace">Workspace</a>
+    </nav>
+    @if (busy()) {
+      <p role="status">Reading current notifications…</p>
+    }
+    @if (error()) {
+      <p role="alert" class="message error">
+        {{ error() }} Reload to check the state before repeating a read action. The count is
+        currently unavailable.
+      </p>
+    }
+    @if (message()) {
+      <p role="status" class="message">{{ message() }}</p>
+    }
+    @if (count() !== null) {
+      <p aria-live="polite">Currently unread: {{ count() | displayNumber }}</p>
+    }
+    <form (ngSubmit)="apply()">
+      <label for="notification-filter">Read status</label
+      ><select id="notification-filter" name="readStatus" [(ngModel)]="filter" [disabled]="busy()">
+        <option value="">All notifications</option>
+        <option value="unread">Unread</option>
+        <option value="read">Read</option></select
+      ><button type="submit" [disabled]="busy()">Apply notification filter</button>
+    </form>
+    @if (rows(); as result) {
+      <section aria-label="My notification list">
+        <h2>My notifications</h2>
+        @for (row of result.items; track row.id) {
+          <article>
+            <h3>{{ row.title }}</h3>
+            <p>{{ row.message }}</p>
+            <p>
+              {{ row.readAtUtc ? 'Read' : 'Unread' }} ·
+              <time [attr.datetime]="row.occurredAtUtc">{{ date(row.occurredAtUtc) }}</time>
+            </p>
+            <button type="button" [disabled]="busy()" (click)="open(row.id)">
+              Open notification {{ row.title }}
+            </button>
+          </article>
+        } @empty {
+          <p>No notifications match the current read filter.</p>
+        }
+        <app-crm-pager
+          label="My notification pages"
+          [busy]="busy()"
+          [page]="page()"
+          [total]="result.totalCount"
+          (change)="move($event)"
+        />
+      </section>
+    }
+    @if (selected(); as row) {
+      <section aria-label="Notification details">
+        <h2>{{ row.title }}</h2>
+        <p>{{ row.message }}</p>
+        <dl>
+          <dt>Event time in your device timezone</dt>
+          <dd>
+            <time [attr.datetime]="row.occurredAtUtc">{{ date(row.occurredAtUtc) }}</time>
+          </dd>
+          <dt>Notification availability time</dt>
+          <dd>{{ date(row.createdAtUtc) }}</dd>
+          <dt>Read status</dt>
+          <dd>{{ row.readAtUtc ? date(row.readAtUtc) : 'Not read yet' }}</dd>
+        </dl>
+        @if (!row.readAtUtc) {
+          <button type="button" [disabled]="busy()" (click)="markRead()">
+            Mark notification as read
+          </button>
+        }
+        @if (service.destination(row); as link) {
+          <a [routerLink]="link.path">{{ link.label }}</a>
+        }
+      </section>
+    }
+  </section>
+} @else {
+  <section class="account-panel">
+    <p>
+      Notifications are available to customers, sales employees and managers according to current
+      permissions.
+    </p>
+    <a routerLink="/workspace">Workspace</a>
+  </section>
+}

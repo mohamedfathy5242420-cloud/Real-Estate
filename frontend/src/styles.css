@@ -1,0 +1,75 @@
+:root {
+  color-scheme: light;
+  font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+  line-height: 1.75;
+  color: #192e36;
+  background: #f7f6f2;
+  --color-text: #192e36;
+  --color-primary: #244a43;
+  --color-primary-soft: #edf2ed;
+  --color-danger: #a61b1b;
+  --color-success: #26734d;
+  --color-warning: #8a5600;
+  --color-canvas: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-boundary: #7c8983;
+  --color-boundary-subtle: #e1e5df;
+  --color-muted: #65716b;
+  --color-navy: #192e36;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-sm: 0.65rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --shadow-sm: 0 10px 32px rgb(25 46 54 / 5%);
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  min-inline-size: 20rem;
+  background: var(--color-canvas);
+  scroll-behavior: smooth;
+}
+body {
+  min-block-size: 100vh;
+  margin: 0;
+  background: var(--color-canvas);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+img,
+svg {
+  max-inline-size: 100%;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 3px solid #986c32;
+  outline-offset: 4px;
+}
+::selection {
+  background: var(--color-primary);
+  color: white;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

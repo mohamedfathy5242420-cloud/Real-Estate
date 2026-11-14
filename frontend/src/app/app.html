@@ -1,0 +1,90 @@
+<a class="skip-link" href="#main-content" (click)="focusMainContent()">Skip to main content</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a
+      class="brand"
+      routerLink="/catalog"
+      aria-label="BrokerHub — Property home page"
+      (click)="closeMenu()"
+    >
+      <span class="brand-mark" aria-hidden="true"
+        ><svg viewBox="0 0 32 32" fill="none">
+          <path
+            d="M5 25V12l11-7 11 7v13H5Z M11 25V15h10v10 M16 5v6"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linejoin="round"
+          /></svg
+      ></span>
+      <span class="brand-copy">
+        <strong>{{ title }}</strong>
+        <span>Discover properties and track your requests</span>
+      </span>
+    </a>
+
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-controls="primary-nav"
+      aria-label="Toggle navigation menu"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="toggleMenu()"
+    >
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+
+    <nav id="primary-nav" aria-label="Main navigation" [class.open]="menuOpen()">
+      <a
+        routerLink="/catalog"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        (click)="closeMenu()"
+        >Properties</a
+      >
+      <a
+        routerLink="/auth/session"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        (click)="closeMenu()"
+        >My account</a
+      >
+      @if (accounts.account()) {
+        <a
+          routerLink="/workspace"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          (click)="closeMenu()"
+          >Workspace</a
+        >
+      }
+      <a
+        class="sign-in-link"
+        routerLink="/auth/login"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+        (click)="closeMenu()"
+        >{{ accounts.account() ? 'Switch account' : 'Sign in' }}</a
+      >
+    </nav>
+  </div>
+</header>
+
+<main id="main-content" tabindex="-1">
+  <router-outlet (activate)="focusRouteHeading()" />
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <p><strong>BrokerHub — Local environment</strong></p>
+    <p>
+      Properties, accounts, requests and staff tasks are connected to the server according to your
+      permissions.
+    </p>
+  </div>
+</footer>

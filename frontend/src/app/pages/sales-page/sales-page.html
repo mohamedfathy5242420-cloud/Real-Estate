@@ -1,0 +1,333 @@
+<app-page-heading
+  eyebrow="Sales"
+  title="Deals and commissions"
+  description="Approve documented external sales, preserve historical commissions and record actual collection separately from deposits."
+/>
+@if (allowed()) {
+  <section class="account-panel" [attr.aria-busy]="busy()">
+    @if (busy()) {
+      <p role="status">Contacting the server…</p>
+    }
+    @if (error()) {
+      <p class="message error" role="alert">{{ error() }}</p>
+    }
+    @if (message()) {
+      <p class="message success" role="status">{{ message() }}</p>
+    }
+    <nav aria-label="Deal tools">
+      <button type="button" [disabled]="busy()" (click)="reload()">Reload deals</button
+      ><button type="button" [disabled]="!canWrite()" (click)="start()">Approve new sale</button
+      ><a routerLink="/admin/reports">Sales and commission reports</a
+      ><a routerLink="/admin/bookings">Bookings</a><a routerLink="/workspace">Workspace</a>
+    </nav>
+    @if (pending()) {
+      <aside aria-label="Unresolved sale operation">
+        <p>
+          The original operation is stored in page memory. Leaving loses the recovery copy; review
+          history before a new submission.
+        </p>
+        <button type="button" [disabled]="busy()" (click)="recover()">
+          Confirm the same saved sale operation
+        </button>
+      </aside>
+    }
+    <details>
+      <summary>Filter saved deals</summary>
+      <form [formGroup]="filters" (ngSubmit)="filter()">
+        @for (f of filterFields; track f[0]) {
+          <label [for]="'sale-filter-' + f[0]">{{ f[1] }} (Optional)</label
+          ><input
+            [id]="'sale-filter-' + f[0]"
+            [formControlName]="f[0]"
+            [type]="f[0].startsWith('saleLocal') ? 'date' : 'text'"
+            maxlength="40"
+          />
+        }
+        <button type="submit" [disabled]="busy() || !!pending() || blocked()">
+          Apply deal filter
+        </button>
+      </form>
+    </details>
+    <h2>Approved deals</h2>
+    <ul>
+      @for (item of list()?.items ?? []; track item.id) {
+        <li>
+          <button
+            type="button"
+            [disabled]="busy() || !!pending() || blocked()"
+            (click)="open(item)"
+          >
+            {{ item.finalUnitPrice | displayCurrency: item.currencyCode }} ·
+            <bdi>{{ item.id }}</bdi>
+          </button>
+        </li>
+      } @empty {
+        <li>There are no deals on this page.</li>
+      }
+    </ul>
+    <app-crm-pager
+      label="Deal pages"
+      [busy]="busy() || !!pending() || blocked()"
+      [page]="page()"
+      [total]="list()?.total ?? 0"
+      (change)="listPage($event)"
+    />
+    @if (creating()) {
+      <section aria-label="Prepare new sale">
+        <h2>Select sale origin</h2>
+        <button type="button" [disabled]="busy() || !!pending()" (click)="discardDraft()">
+          Cancel sale draft
+        </button>
+        <p>
+          A booking, viewing or deposit is not generally required. To link a booking, select it
+          explicitly; it must remain confirmed and unexpired when saving. The server checks lead
+          protection and its original agreement.
+        </p>
+        <h3>Customer</h3>
+        <ul>
+          @for (item of customers()?.items ?? []; track item.id) {
+            <li>
+              <button type="button" [disabled]="!canWrite()" (click)="chooseCustomer(item)">
+                {{ item.fullName }} · <bdi>{{ item.id }}</bdi>
+              </button>
+            </li>
+          }
+        </ul>
+        <app-crm-pager
+          label="Sales customer pages"
+          [busy]="busy() || !!pending() || blocked()"
+          [page]="customerPage()"
+          [total]="customers()?.total ?? 0"
+          (change)="originPage('customers', $event)"
+        />
+        @if (customer(); as selected) {
+          <p>Selected customer: {{ selected.fullName }}</p>
+          <h3>Original lead</h3>
+          <a routerLink="/admin/clients">Create and review customer leads from CRM</a>
+          <ul>
+            @for (item of leads()?.items ?? []; track item.id) {
+              <li>
+                <button type="button" [disabled]="!canWrite()" (click)="chooseLead(item)">
+                  {{ item.status === 'Open' ? 'Open lead' : 'Closed lead' }} ·
+                  {{ item.openedOnLocalDate }} · <bdi>{{ item.id }}</bdi>
+                </button>
+              </li>
+            } @empty {
+              <li>No leads are on this page. Open an actual lead from customer follow-up first.</li>
+            }
+          </ul>
+          <app-crm-pager
+            label="Sales opportunity pages"
+            [busy]="busy() || !!pending() || blocked()"
+            [page]="leadPage()"
+            [total]="leads()?.total ?? 0"
+            (change)="originPage('leads', $event)"
+          />
+        }
+        @if (lead(); as origin) {
+          <p>
+            Original agreement: <bdi>{{ origin.marketingAgreementId }}</bdi> · Last protection day:
+            <bdi>{{ origin.protectionEndsOn }}</bdi> · Opening time:
+            <bdi>{{ origin.openingTimeZoneId }}</bdi
+            >. An origin appearing in the list does not establish commission eligibility for the
+            current sale.
+          </p>
+          <form (ngSubmit)="searchUnits()">
+            <label for="sale-unit-search"
+              >Search by unit code or title within the lead project</label
+            ><input id="sale-unit-search" [formControl]="unitSearch" maxlength="200" /><button
+              type="submit"
+              [disabled]="busy() || !!pending() || blocked()"
+            >
+              Search sale units
+            </button>
+          </form>
+          <ul>
+            @for (item of units()?.items ?? []; track item.id) {
+              <li>
+                <button
+                  type="button"
+                  [disabled]="!canWrite() || item.hasAdoptedSale"
+                  (click)="chooseUnit(item)"
+                >
+                  {{ item.code }} · {{ item.title }} ·
+                  {{
+                    item.hasAdoptedSale
+                      ? 'Has a recorded deal'
+                      : item.publicationStatus === 'Published'
+                        ? 'Published listing'
+                        : 'Unpublished'
+                  }}
+                </button>
+              </li>
+            } @empty {
+              <li>There are no matching units on this page.</li>
+            }
+          </ul>
+          <app-crm-pager
+            label="Sale unit pages"
+            [busy]="busy() || !!pending() || blocked()"
+            [page]="unitPage()"
+            [total]="units()?.total ?? 0"
+            (change)="originPage('units', $event)"
+          />
+        }
+        @if (unit(); as selected) {
+          <h3>Unit sale {{ selected.code }} · {{ selected.title }}</h3>
+          <p>
+            Listing and availability are separate from sale recording. Approving a deal unpublishes
+            the listing without inventing availability confirmation.
+          </p>
+          <label for="sale-booking-link">Link confirmed booking (explicit selection)</label
+          ><select
+            id="sale-booking-link"
+            [formControl]="linkedId"
+            [attr.disabled]="busy() || pending() || blocked() ? '' : null"
+            (change)="chooseBooking()"
+          >
+            <option value="">Documented sale without a linked booking</option>
+            @if (linkedId.value && !linkListed()) {
+              <option [value]="linkedId.value">
+                The selected booking is unavailable on this page; review its state before approval
+              </option>
+            }
+            @for (item of matchingBookings(); track item.id) {
+              <option [value]="item.id">
+                {{ item.id }} · Deadline {{ date(item.reservationExpiresAtUtc!, item.timeZoneId) }}
+              </option>
+            }</select
+          ><app-crm-pager
+            label="Linkable booking pages"
+            [busy]="busy() || !!pending() || blocked()"
+            [page]="bookingPage()"
+            [total]="bookings()?.total ?? 0"
+            (change)="originPage('bookings', $event)"
+          />
+          @if (linked(); as booking) {
+            <p>
+              Explicitly selected booking: <bdi>{{ booking.id }}</bdi> ·
+              {{
+                booking.status === 'Confirmed'
+                  ? 'Confirmed at latest read'
+                  : 'Its state changed; review before approval'
+              }}. Booking completion, the deal and commission are saved together.
+            </p>
+          }
+          <form [formGroup]="saleForm" (ngSubmit)="adopt()">
+            <h3>Actual sale details</h3>
+            <p>
+              Enter the time in your device timezone <bdi>{{ deviceZone }}</bdi
+              >; stored as UTC. The browser does not calculate commission from the agreement.
+            </p>
+            @for (field of saleFields; track field.key) {
+              <label [for]="'sale-' + field.key">{{ field.label }}</label>
+              @if (field.key === 'selectionReason') {
+                <textarea
+                  [id]="'sale-' + field.key"
+                  [formControlName]="field.key"
+                  [maxlength]="field.max"
+                  rows="4"
+                ></textarea>
+              } @else {
+                <input
+                  [id]="'sale-' + field.key"
+                  [formControlName]="field.key"
+                  [type]="field.type ?? 'text'"
+                  [maxlength]="field.max"
+                  [required]="!field.optional"
+                  [attr.step]="field.type === 'datetime-local' ? 0.001 : null"
+                />
+              }
+            }
+            <button type="submit" [disabled]="!canWrite() || selected.hasAdoptedSale">
+              Approve documented external sale
+            </button>
+          </form>
+        }
+      </section>
+    }
+    @if (current(); as deal) {
+      <section aria-label="Deal details">
+        <h2>Approved deal</h2>
+        <p>
+          Deal reference: <bdi>{{ deal.id }}</bdi> · Unit sale price
+          {{ deal.finalUnitPrice | displayCurrency: deal.currencyCode }}
+        </p>
+        <app-sales-fields [record]="deal" [zone]="deal.openingTimeZoneId" />
+        @if (snapshot(); as saved) {
+          <h3>Saved historical commission</h3>
+          <p>
+            {{ saved.amount | displayCurrency: saved.currencyCode }} · It is not recalculated when
+            the agreement changes later.
+          </p>
+          <details>
+            <summary>Saved commission origin, rule and evidence</summary>
+            <app-sales-fields [record]="saved" [zone]="saved.openingTimeZoneId" />
+          </details>
+        }
+        @if (summary(); as sums) {
+          <h3>Actual recorded collection</h3>
+          <app-sales-fields [record]="sums" [zone]="deal.openingTimeZoneId" />
+        }
+        <p>
+          Deposits and refunds are separate from commission due and collection. The application does
+          not transfer funds.
+        </p>
+        <button type="button" [disabled]="!canWrite()" (click)="beginCollection()">
+          Record external commission collection
+        </button>
+        @for (fact of collections()?.items ?? []; track fact.id) {
+          <article>
+            <h4>Saved collection record</h4>
+            <app-sales-fields [record]="fact" [zone]="deal.openingTimeZoneId" />
+          </article>
+        } @empty {
+          <p>There are no collections on this page.</p>
+        }
+        <app-crm-pager
+          label="Commission collection pages"
+          [busy]="busy() || !!pending() || blocked()"
+          [page]="collectionPage()"
+          [total]="collections()?.total ?? 0"
+          (change)="collectionsPage($event)"
+        />
+        @if (collectMode()) {
+          <form [formGroup]="collectionForm" (ngSubmit)="collect()">
+            <h3>Document actual external collection</h3>
+            <p>
+              Saved original currency: <bdi>{{ snapshot()?.currencyCode }}</bdi
+              >. Time in your device timezone <bdi>{{ deviceZone }}</bdi
+              >; stored as UTC. Enter an exact amount without grouping separators.
+            </p>
+            @for (field of collectionFields; track field.key) {
+              <label [for]="'collection-' + field.key">{{ field.label }}</label>
+              @if (field.key === 'notes') {
+                <textarea
+                  [id]="'collection-' + field.key"
+                  [formControlName]="field.key"
+                  [maxlength]="field.max"
+                  rows="4"
+                ></textarea>
+              } @else {
+                <input
+                  [id]="'collection-' + field.key"
+                  [formControlName]="field.key"
+                  [type]="field.type ?? 'text'"
+                  [maxlength]="field.max"
+                  [required]="!field.optional"
+                  [attr.step]="field.type === 'datetime-local' ? 0.001 : null"
+                />
+              }
+            }
+            <button type="submit" [disabled]="!canWrite()">Save external collection</button>
+          </form>
+        }
+      </section>
+    }
+  </section>
+} @else {
+  <p role="alert">
+    Sales approval session or permission is no longer available. Previous data was cleared.
+  </p>
+  <a routerLink="/auth/login">Sign in</a>
+}

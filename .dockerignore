@@ -1,0 +1,11 @@
+**
+!src/**
+!docker/**
+!integration/messaging-probe/**
+!.config/dotnet-tools.json
+!Directory.Build.props
+!Directory.Packages.props
+!global.json
+**/bin/**
+**/obj/**
+**/.env

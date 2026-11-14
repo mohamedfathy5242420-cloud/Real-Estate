@@ -1,0 +1,114 @@
+<app-page-heading
+  eyebrow="BrokerHub account"
+  [title]="title"
+  description="Your account session is managed by the server. Sign-in credentials are not saved in browser storage."
+/>
+<section class="account-panel" [attr.aria-busy]="busy()">
+  @if (error()) {
+    <p class="message error" role="alert">{{ error() }}</p>
+  }
+  @if (fieldErrors().length) {
+    <ul>
+      @for (field of fieldErrors(); track $index) {
+        <li>{{ field }}</li>
+      }
+    </ul>
+  }
+  @if (message()) {
+    <p class="message success" role="status">{{ message() }}</p>
+  }
+  @if (busy()) {
+    <p role="status">Contacting the server…</p>
+  }
+  @if (mode === 'session') {
+    @if (account(); as current) {
+      <p>
+        Signed in as <bdi>{{ current.email }}</bdi>
+      </p>
+      <button type="button" [disabled]="busy()" (click)="logout()">Sign out</button>
+      @if (current.roles.includes('SalesEmployee') || current.roles.includes('SalesManager')) {
+        <p>
+          Your account reference for employee profile setup by administration:
+          <bdi>{{ current.accountId }}</bdi>
+        </p>
+      }
+    } @else if (!busy()) {
+      <p>No account session is available.</p>
+    }
+    <p>Open your workspace to follow requests and tasks available to your account.</p>
+    @if (account()) {
+      <p><a routerLink="/workspace">Open workspace and tasks</a></p>
+    }
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      @if (mode !== 'confirm-email') {
+        <label for="account-email">Email</label>
+        <input
+          id="account-email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          dir="ltr"
+          required
+        />
+      }
+      @if (mode === 'register') {
+        <p class="hint">
+          For local testing, use <bdi>customer@brokerhub.test</bdi>. No real email is sent.
+        </p>
+        <label for="account-phone">Phone number</label>
+        <input
+          id="account-phone"
+          type="tel"
+          formControlName="phoneNumber"
+          autocomplete="tel"
+          dir="ltr"
+          required
+        />
+      }
+      @if (mode === 'login' || mode === 'register' || mode === 'reset-password') {
+        <label for="account-password">{{
+          mode === 'reset-password' ? 'New password' : 'Password'
+        }}</label>
+        <input
+          id="account-password"
+          type="password"
+          formControlName="password"
+          [attr.autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
+          dir="ltr"
+          required
+        />
+        @if (mode !== 'login') {
+          <p class="hint">
+            At least 8 characters with uppercase, lowercase, a number and a symbol.
+          </p>
+        }
+      }
+      @if (mode === 'login') {
+        <label class="checkbox"
+          ><input type="checkbox" formControlName="rememberMe" /> Remember me</label
+        >
+      }
+      <button
+        type="submit"
+        [disabled]="
+          busy() || (!!message() && (mode === 'confirm-email' || mode === 'reset-password'))
+        "
+      >
+        {{ title }}
+      </button>
+      @if (mode === 'login' || mode === 'register') {
+        <button class="secondary" type="button" [disabled]="busy()" (click)="resend()">
+          Prepare confirmation link again
+        </button>
+      }
+    </form>
+  }
+  <nav aria-label="Account links">
+    <a routerLink="/auth/login">Sign in</a>
+    <a routerLink="/auth/register">Create account</a>
+    <a routerLink="/auth/recovery">Forgot password</a>
+    <a routerLink="/auth/session">My account</a>
+    <a routerLink="/catalog">Catalog</a>
+  </nav>
+</section>
